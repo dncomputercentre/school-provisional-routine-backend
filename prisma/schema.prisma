@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model InvoiceSetting {
+  id            Int      @id @default(autoincrement())
+  prefix        String
+  currentNumber Int
+  createdAt     DateTime @default(now())
+}
+
+model Product {
+  id          Int        @id @default(autoincrement())
+  name        String
+  category    String?
+  subCategory String?
+  productCode String     @unique
+  price       Float
+  stock       Int
+  createdAt   DateTime   @default(now())
+  isActive    Boolean    @default(true)
+  SaleItem    SaleItem[]
+}
+
+model Sale {
+  id              Int        @id @default(autoincrement())
+  customerName    String?
+  customerAddress String?
+  paymentMode     String
+  discountType    String?
+  discountValue   Float?
+  totalAmount     Float
+  createdAt       DateTime   @default(now())
+  invoiceNo       String?
+  netAmount       Float      @default(0)
+  SaleItem        SaleItem[]
+}
+
+model SaleItem {
+  id        Int     @id @default(autoincrement())
+  saleId    Int
+  productId Int
+  qty       Int
+  price     Float
+  Product   Product @relation(fields: [productId], references: [id])
+  Sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+}
+
+model Shop {
+  id        Int      @id @default(autoincrement())
+  shopName  String
+  address   String
+  phone     String
+  gst       String?
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id             Int       @id @default(autoincrement())
+  name           String
+  email          String    @unique
+  password       String
+  role           String    @default("owner")
+  createdAt      DateTime  @default(now())
+  resetOtp       String?
+  resetOtpExpiry DateTime?
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+model SchoolHeadMaster {
+  id                 String   @id @default(uuid())
+  email              String   @unique
+  password           String
+  mustChangePassword Boolean  @default(true)
+  createdAt          DateTime @default(now())
+}
+
+
+model SchoolTeacher {
+  id               String   @id @default(uuid())
+  name             String
+  mobile           String
+  mainSubject      String
+  optionalSubjects String[]
+  createdAt        DateTime @default(now())
+}
+
+
+model SchoolTeacherAbsent {
+  id        String   @id @default(uuid())
+  teacherId String
+  date      DateTime
+}
+
+model SchoolClassRoutine {
+  id            String   @id @default(uuid())
+  className     String
+  section       String
+  period        Int
+  time          String
+  subject       String
+  teacherId     String
+  createdAt     DateTime @default(now())
+}
