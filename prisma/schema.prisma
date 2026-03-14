@@ -20,38 +20,41 @@ model SchoolHeadMaster {
 }
 
 model SchoolTeacher {
-  id               String                @id @default(uuid())
+  id               String   @id @default(uuid())
   name             String
   mobile           String
   mainSubject      String
   optionalSubjects String[]
-  createdAt        DateTime              @default(now())
-  routines         ClassRoutine[]
-  absents          SchoolTeacherAbsent[]
+  createdAt        DateTime @default(now())
+
+  routines ClassRoutine[]
+  absents  SchoolTeacherAbsent[]
 
   @@schema("school")
 }
 
 model SchoolTeacherAbsent {
-  id        String        @id @default(uuid())
+  id        String   @id @default(uuid())
   teacherId String
   date      DateTime
-  teacher   SchoolTeacher @relation(fields: [teacherId], references: [id])
+
+  teacher SchoolTeacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@schema("school")
 }
 
 model ClassRoutine {
-  id        String        @id @default(uuid())
+  id        String   @id @default(uuid())
   className String
   section   String
   period    String
   time      String
   subject   String
   teacherId String
-  createdAt DateTime      @default(now())
+  createdAt DateTime @default(now())
   day       String
-  teacher   SchoolTeacher @relation(fields: [teacherId], references: [id])
+
+  teacher SchoolTeacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@schema("school")
 }
