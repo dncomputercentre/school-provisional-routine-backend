@@ -1,12 +1,28 @@
-const express = require("express");
+import express from "express";
+
+import {
+  createRoutine,
+  getRoutines,
+  filterRoutines,
+  updateRoutine,
+  deleteRoutine,
+} from "../controllers/classRoutineController.js";
+
 const router = express.Router();
 
-const {
-  createClassRoutine,
-  getClassRoutine,
-} = require("../controllers/classRoutineController");
+/* CREATE */
+router.post("/", createRoutine);
 
-router.post("/", createClassRoutine);
-router.get("/", getClassRoutine);
+/* GET ALL */
+router.get("/", getRoutines);
 
-module.exports = router;
+/* FILTER */
+router.get("/filter", filterRoutines);
+
+/* UPDATE */
+router.put("/:id", updateRoutine);
+
+/* DELETE */
+router.delete("/:id", deleteRoutine);
+
+export default router;

@@ -1,21 +1,26 @@
-const prisma = require("../prismaClient");
-const bcrypt = require("bcryptjs");
+import prisma from "../prismaClient.js";
+import bcrypt from "bcryptjs";
 
 /* CREATE TEMP HEAD MASTER */
-exports.createTempHeadMaster = async (req, res) => {
+export const createTempHeadMaster = async (req, res) => {
   try {
+
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Email & password required" });
+      return res.status(400).json({
+        message: "Email & password required"
+      });
     }
 
     const exists = await prisma.schoolHeadMaster.findUnique({
-      where: { email },
+      where: { email }
     });
 
     if (exists) {
-      return res.status(400).json({ message: "Headmaster already exists" });
+      return res.status(400).json({
+        message: "Headmaster already exists"
+      });
     }
 
     const hashed = await bcrypt.hash(password, 10);
@@ -24,53 +29,85 @@ exports.createTempHeadMaster = async (req, res) => {
       data: {
         email,
         password: hashed,
-        mustChangePassword: true,
-      },
+        mustChangePassword: true
+      }
     });
 
     res.json({
       success: true,
       message: "Temporary headmaster created",
-      userId: user.id,
+      userId: user.id
     });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+
+    console.log("CREATE ERROR:", err);
+
+    res.status(500).json({
+      message: "Server error"
+    });
   }
 };
 
+
 /* LOGIN */
-exports.loginHeadMaster = async (req, res) => {
+export const loginHeadMaster = async (req, res) => {
   try {
+
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email & password required"
+      });
+    }
+
     const user = await prisma.schoolHeadMaster.findUnique({
-      where: { email },
+      where: { email }
     });
 
     if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({
+        message: "Invalid credentials"
+      });
     }
 
     const match = await bcrypt.compare(password, user.password);
 
     if (!match) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({
+        message: "Invalid credentials"
+      });
     }
 
     res.json({
       success: true,
       userId: user.id,
-      mustChangePassword: user.mustChangePassword,
+      mustChangePassword: user.mustChangePassword
     });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+
+    console.log("LOGIN ERROR:", err);
+
+    res.status(500).json({
+      message: "Server error"
+    });
   }
 };
 
+
 /* CHANGE PASSWORD */
-exports.changePassword = async (req, res) => {
+export const changePassword = async (req, res) => {
   try {
+
     const { userId, newPassword } = req.body;
+
+    if (!userId || !newPassword) {
+      return res.status(400).json({
+        message: "userId and newPassword required"
+      });
+    }
 
     const hashed = await bcrypt.hash(newPassword, 10);
 
@@ -78,12 +115,21 @@ exports.changePassword = async (req, res) => {
       where: { id: userId },
       data: {
         password: hashed,
-        mustChangePassword: false,
-      },
+        mustChangePassword: false
+      }
     });
 
-    res.json({ success: true, message: "Password changed" });
+    res.json({
+      success: true,
+      message: "Password changed"
+    });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+
+    console.log("CHANGE PASSWORD ERROR:", err);
+
+    res.status(500).json({
+      message: "Server error"
+    });
   }
 };

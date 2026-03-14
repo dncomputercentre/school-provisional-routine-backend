@@ -1,12 +1,23 @@
-const express = require("express");
-const router = express.Router();
-
-const {
+import express from "express";
+import {
   createTeacher,
   getTeachers,
-} = require("../controllers/teacherController");
+  updateTeacher, 
+  deleteTeacher,
+} from "../controllers/teacherController.js";
 
+const router = express.Router();
+
+// CREATE
 router.post("/", createTeacher);
-router.get("/", getTeachers);
 
-module.exports = router;
+// GET ALL
+router.get("/", getTeachers);
+/* UPDATE */
+router.put("/:id", updateTeacher);
+
+
+// DELETE
+router.delete("/:id", deleteTeacher);
+
+export default router;

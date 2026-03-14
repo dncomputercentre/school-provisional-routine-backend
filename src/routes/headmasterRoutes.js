@@ -1,14 +1,19 @@
-const express = require("express");
-const router = express.Router();
-
-const {
+import express from "express";
+import {
   createTempHeadMaster,
   loginHeadMaster,
   changePassword,
-} = require("../controllers/headmasterController");
+} from "../controllers/headmasterController.js";
 
+const router = express.Router();
+
+// Setup temp headmaster
 router.post("/setup", createTempHeadMaster);
+
+// Login
 router.post("/login", loginHeadMaster);
+
+// Change password
 router.post("/change-password", changePassword);
 
-module.exports = router;
+export default router;

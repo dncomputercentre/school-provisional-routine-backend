@@ -1,7 +1,7 @@
-const prisma = require("../prismaClient");
+import prisma from "../prismaClient.js";
 
 /* ================= MARK TEACHER ABSENT (TODAY) ================= */
-exports.markAbsentToday = async (req, res) => {
+export const markAbsentToday = async (req, res) => {
   try {
     const { teacherId } = req.body;
 
@@ -12,10 +12,11 @@ exports.markAbsentToday = async (req, res) => {
       });
     }
 
+    // Today date (00:00)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // prevent duplicate absent for same day
+    // Prevent duplicate absent entry
     const exists = await prisma.schoolTeacherAbsent.findFirst({
       where: {
         teacherId,
@@ -30,6 +31,7 @@ exports.markAbsentToday = async (req, res) => {
       });
     }
 
+    // Create absent record
     const absent = await prisma.schoolTeacherAbsent.create({
       data: {
         teacherId,
@@ -43,18 +45,25 @@ exports.markAbsentToday = async (req, res) => {
       data: absent,
     });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      error: err.message,
+    });
   }
 };
 
 /* ================= GET TODAY ABSENT TEACHERS ================= */
-exports.getTodayAbsentTeachers = async (req, res) => {
+export const getTodayAbsentTeachers = async (req, res) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const list = await prisma.schoolTeacherAbsent.findMany({
       where: { date: today },
+      include: {
+        teacher: true, // 🔥 optional relation include
+      },
     });
 
     res.json({
@@ -62,6 +71,10 @@ exports.getTodayAbsentTeachers = async (req, res) => {
       data: list,
     });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      error: err.message,
+    });
   }
 };

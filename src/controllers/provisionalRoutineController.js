@@ -1,102 +1,105 @@
-const prisma = require("../prismaClient");
+import prisma from "../prismaClient.js";
 
-/* ================= PROVISIONAL ROUTINE GENERATOR ================= */
-exports.generateProvisionalRoutine = async (req, res) => {
+export const getProvisionalRoutineByDay = async (req, res) => {
   try {
-    const { className, section } = req.query;
 
-    if (!className || !section) {
-      return res.status(400).json({
-        success: false,
-        message: "className and section are required",
-      });
-    }
+    const { day } = req.params;
 
-    // 1️⃣ Today date (00:00)
+    /* ===== TODAY DATE ===== */
+
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
 
-    // 2️⃣ Original routine
-    const routines = await prisma.schoolClassRoutine.findMany({
-      where: { className, section },
-      orderBy: { period: "asc" },
-    });
+    const start = new Date(
+      today.setHours(0, 0, 0, 0)
+    );
 
-    // 3️⃣ Absent teachers today
-    const absentList = await prisma.schoolTeacherAbsent.findMany({
-      where: { date: today },
-    });
-    const absentTeacherIds = absentList.map(a => a.teacherId);
+    const end = new Date(
+      today.setHours(23, 59, 59, 999)
+    );
 
-    // 4️⃣ All teachers
-    const teachers = await prisma.schoolTeacher.findMany();
+    /* ===== NORMAL ROUTINE ===== */
 
-    // 5️⃣ Load counter (fair distribution)
-    const loadCount = {};
-    teachers.forEach(t => (loadCount[t.id] = 0));
+    const routines =
+      await prisma.classRoutine.findMany({
+        where: {
+          day: {
+            equals: day,
+            mode: "insensitive",
+          },
+        },
+        include: {
+          teacher: true,
+        },
+      });
 
-    const provisional = [];
+    /* ===== ABSENT ===== */
 
-    // 6️⃣ Loop periods
-    for (const r of routines) {
-      // teacher present
-      if (!absentTeacherIds.includes(r.teacherId)) {
-        loadCount[r.teacherId]++;
-        provisional.push({
-          period: r.period,
-          time: r.time,
-          subject: r.subject,
-          teacherId: r.teacherId,
-          status: "MAIN",
-        });
-        continue;
+    const absents =
+      await prisma.schoolTeacherAbsent.findMany({
+        where: {
+          date: {
+            gte: start,
+            lte: end,
+          },
+        },
+      });
+
+    /* ===== TEACHERS ===== */
+
+    const teachers =
+      await prisma.schoolTeacher.findMany();
+
+    /* ===== LOGIC ===== */
+
+    const result = routines.map((r) => {
+
+      const absent = absents.find(
+        (a) => a.teacherId === r.teacherId
+      );
+
+      if (!absent) {
+        return {
+          ...r,
+          isAbsent: false,
+          substituteTeacher: null,
+        };
       }
 
-      // teacher absent → find replacement
-      const eligible = teachers.filter(t =>
-        t.mainSubject === r.subject ||
-        t.optionalSubjects.includes(r.subject)
-      );
+      const isSenior =
+        r.className.includes("XI") ||
+        r.className.includes("XII");
 
-      // only present teachers
-      const presentEligible = eligible.filter(
-        t => !absentTeacherIds.includes(t.id)
-      );
-
-      // sort by least load
-      presentEligible.sort(
-        (a, b) => loadCount[a.id] - loadCount[b.id]
-      );
-
-      if (presentEligible.length === 0) {
-        provisional.push({
-          period: r.period,
-          time: r.time,
-          subject: r.subject,
-          teacherId: null,
-          status: "NO_TEACHER",
-        });
-      } else {
-        const selected = presentEligible[0];
-        loadCount[selected.id]++;
-        provisional.push({
-          period: r.period,
-          time: r.time,
-          subject: r.subject,
-          teacherId: selected.id,
-          status: "OPTIONAL",
-        });
+      if (isSenior) {
+        return {
+          ...r,
+          isAbsent: true,
+          substituteTeacher: null,
+        };
       }
-    }
+
+      const substitute =
+        teachers.find((t) =>
+          t.mainSubject === r.subject ||
+          (t.optionalSubjects || [])
+            .includes(r.subject)
+        );
+
+      return {
+        ...r,
+        isAbsent: true,
+        substituteTeacher: substitute || null,
+      };
+    });
 
     res.json({
       success: true,
-      className,
-      section,
-      date: today,
-      provisionalRoutine: provisional,
+      data: result,
     });
+
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    console.log(err);
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 };

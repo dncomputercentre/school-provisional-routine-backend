@@ -1,12 +1,15 @@
-const express = require("express");
-const router = express.Router();
-
-const {
+import express from "express";
+import {
   markAbsentToday,
   getTodayAbsentTeachers,
-} = require("../controllers/absentController");
+} from "../controllers/absentController.js";
 
+const router = express.Router();
+
+// Mark absent
 router.post("/mark", markAbsentToday);
+
+// Get today absent teachers
 router.get("/today", getTodayAbsentTeachers);
 
-module.exports = router;
+export default router;

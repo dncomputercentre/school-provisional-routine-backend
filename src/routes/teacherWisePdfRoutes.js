@@ -1,10 +1,11 @@
-const express = require("express");
+import express from "express";
+import {
+  generateTeacherWisePdf,
+} from "../controllers/teacherWisePdfController.js";
+
 const router = express.Router();
 
-const {
-  generateTeacherWisePdf,
-} = require("../controllers/teacherWisePdfController");
-
+// Generate teacher wise PDF
 router.get("/", generateTeacherWisePdf);
 
-module.exports = router;
+export default router;
