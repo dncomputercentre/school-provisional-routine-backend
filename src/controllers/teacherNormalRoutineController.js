@@ -1,41 +1,51 @@
 import prisma from "../prismaClient.js";
 
-/* =================================================
-   GET TEACHER NORMAL ROUTINE BY DAY
-================================================= */
-
-export const getTeacherRoutineByDay = async (req, res) => {
+export const searchTeacherRoutine = async (req, res) => {
   try {
-
-    const { day } = req.params;
+    const { teacherName, day } = req.query;
 
     const data = await prisma.classRoutine.findMany({
       where: {
-        day: {
-          equals: day,
-          mode: "insensitive",
-        },
+        ...(day && {
+          day: {
+            equals: day,
+            mode: "insensitive",
+          },
+        }),
+
+        ...(teacherName && {
+          teacher: {
+            name: {
+              contains: teacherName,
+              mode: "insensitive",
+            },
+          },
+        }),
       },
 
       include: {
-        teacher: true,   // join teacher
+        teacher: true,
       },
 
-      orderBy: {
-        period: "asc",
-      },
+      orderBy: [
+        {
+          day: "asc",
+        },
+        {
+          period: "asc",
+        },
+      ],
     });
 
     res.json({
       success: true,
       data,
     });
-
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
 
     res.status(500).json({
-      message: "Server error",
+      message: "Server Error",
     });
   }
 };
