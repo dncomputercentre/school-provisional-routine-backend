@@ -2,7 +2,7 @@ import prisma from "../prismaClient.js";
 
 export const searchTeacherRoutine = async (req, res) => {
   try {
-    const { teacherName, day } = req.query;
+    const { teacherId, day } = req.query;
 
     const data = await prisma.classRoutine.findMany({
       where: {
@@ -13,13 +13,8 @@ export const searchTeacherRoutine = async (req, res) => {
           },
         }),
 
-        ...(teacherName && {
-          teacher: {
-            name: {
-              contains: teacherName,
-              mode: "insensitive",
-            },
-          },
+        ...(teacherId && {
+          teacherId: teacherId,
         }),
       },
 
