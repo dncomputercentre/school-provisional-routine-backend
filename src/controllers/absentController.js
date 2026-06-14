@@ -78,3 +78,63 @@ export const getTodayAbsentTeachers = async (req, res) => {
     });
   }
 };
+
+/* ================= RESET SINGLE TEACHER ================= */
+export const resetAbsentTeacher = async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    await prisma.schoolTeacherAbsent.deleteMany({
+      where: {
+        teacherId,
+        date: today,
+      },
+    });
+
+    res.json({
+      success: true,
+      message: "Teacher reset successfully",
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+      error: err.message,
+    });
+  }
+};
+
+/* ================= RESET ALL TEACHERS ================= */
+export const resetAllAbsentTeachers = async (
+  req,
+  res
+) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    await prisma.schoolTeacherAbsent.deleteMany({
+      where: {
+        date: today,
+      },
+    });
+
+    res.json({
+      success: true,
+      message: "All absent teachers reset successfully",
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+      error: err.message,
+    });
+  }
+};
