@@ -4,18 +4,15 @@
   "description": "School Provisional Routine Backend",
   "type": "module",
   "main": "src/server.js",
-
   "scripts": {
     "start": "node src/server.js",
     "dev": "node src/server.js",
     "build": "prisma generate",
     "postinstall": "prisma generate"
   },
-
   "keywords": [],
   "author": "",
   "license": "ISC",
-
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^3.0.3",
@@ -24,7 +21,6 @@
     "express": "^4.19.2",
     "pdfkit": "^0.17.2"
   },
-
   "devDependencies": {
     "prisma": "^5.22.0"
   }
