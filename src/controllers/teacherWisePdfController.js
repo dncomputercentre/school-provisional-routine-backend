@@ -1,29 +1,58 @@
 import PDFDocument from "pdfkit";
 import prisma from "../prismaClient.js";
 
-export const generateTeacherWisePdf = async (req, res) => {
-  try {
-    const teachers = await prisma.schoolTeacher.findMany();
+export const generateTeacherPdf =
+async (req,res)=>{
 
-    const doc = new PDFDocument({ size: "A4", margin: 30 });
+ const { teacherId } = req.query;
 
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=Teacher_Routine.pdf"
-    );
+ const routines =
+ await prisma.classRoutine.findMany({
+   where:{
+     teacherId,
+   },
+   include:{
+     teacher:true,
+   },
+ });
 
-    doc.pipe(res);
+ const teacherName =
+   routines[0]?.teacher?.name ||
+   "Teacher";
 
-    doc.fontSize(16).text("Teacher Wise Routine", { align: "center" });
-    doc.moveDown();
+ const doc =
+ new PDFDocument({
+   size:"A4",
+   layout:"landscape",
+   margin:20,
+ });
 
-    teachers.forEach((t, i) => {
-      doc.text(`${i + 1}. ${t.name} - ${t.mainSubject}`);
-    });
+ res.setHeader(
+   "Content-Type",
+   "application/pdf"
+ );
 
-    doc.end();
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+ doc.pipe(res);
+
+ doc
+ .fontSize(20)
+ .text(
+   `${teacherName} Routine`,
+   {
+     align:"center"
+   }
+ );
+
+ doc.moveDown();
+
+ routines.forEach((r)=>{
+
+   doc.fontSize(12)
+   .text(
+     `${r.day} | ${r.period} | ${r.time} | ${r.subject} | ${r.className} | ${r.section}`
+   );
+
+ });
+
+ doc.end();
 };
