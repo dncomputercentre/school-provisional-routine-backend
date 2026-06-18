@@ -30,7 +30,12 @@ export default function AbsentTeacherScreen() {
       const teacherRes = await api.get("/teachers");
       const absentRes = await api.get("/absent/today");
 
-      setTeachers(teacherRes.data.data || []);
+      const sortedTeachers =
+        (teacherRes.data.data || []).sort((a, b) =>
+          a.name.localeCompare(b.name)
+        );
+
+      setTeachers(sortedTeachers);
 
       const absentIds =
         absentRes.data.data.map(
@@ -63,12 +68,82 @@ export default function AbsentTeacherScreen() {
       Alert.alert(
         "Error",
         err.response?.data?.message ||
-          "Failed to mark absent"
+        "Failed to mark absent"
       );
     } finally {
       setLoading(false);
     }
   };
+
+
+  const resetAbsent = async (teacherId) => {
+    try {
+      setLoading(true);
+
+      await api.delete(
+        `/absent/reset/${teacherId}`
+      );
+
+      Alert.alert(
+        "Success",
+        "Teacher reset successfully"
+      );
+
+      loadData();
+    } catch (err) {
+      Alert.alert(
+        "Error",
+        "Failed to reset teacher"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetAllAbsent = async () => {
+  Alert.alert(
+    "Reset All",
+    "Are you sure you want to clear all absent teachers?",
+    [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Yes",
+        onPress: async () => {
+          try {
+
+            setLoading(true);
+
+            await api.delete(
+              "/absent/reset-all"
+            );
+
+            Alert.alert(
+              "Success",
+              "All absent teachers reset successfully"
+            );
+
+            loadData();
+
+          } catch (err) {
+
+            Alert.alert(
+              "Error",
+              "Failed to reset all teachers"
+            );
+
+          } finally {
+
+            setLoading(false);
+
+          }
+        },
+      },
+    ]
+  );
+};
 
   /* ================= COUNTS ================= */
 
@@ -127,22 +202,34 @@ export default function AbsentTeacherScreen() {
         </View>
 
         {/* BUTTON */}
-        <TouchableOpacity
-          style={[
-            styles.btn,
-            isAbsent && styles.btnDisabled,
-          ]}
-          onPress={() =>
-            markAbsent(item.id)
-          }
-          disabled={isAbsent || loading}
-        >
-          <Text style={styles.btnText}>
-            {isAbsent
-              ? "Absent"
-              : "Present"}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.buttonRow}>
+
+          <TouchableOpacity
+            style={[
+              styles.btn,
+              isAbsent && styles.btnDisabled,
+            ]}
+            onPress={() => markAbsent(item.id)}
+            
+            disabled={isAbsent}
+          >
+            <Text style={styles.btnText}>
+              {isAbsent ? "Absent" : "Present"}
+            </Text>
+          </TouchableOpacity>
+
+          
+
+          <TouchableOpacity
+            style={styles.resetBtn}
+            onPress={() => resetAbsent(item.id)}
+          >
+            <Text style={styles.btnText}>
+              Reset
+            </Text>
+          </TouchableOpacity>
+
+        </View>
       </View>
     );
   };
@@ -161,30 +248,39 @@ export default function AbsentTeacherScreen() {
 
         <View style={styles.summaryBox}>
 
-          <View style={styles.summaryCard}>
-            <Text style={styles.sumLabel}>
-              Total
-            </Text>
-            <Text style={styles.sumValue}>
-              {totalTeachers}
-            </Text>
-          </View>
+  <View style={styles.summaryCard}>
+    <Text style={styles.sumLabel}>
+      Total
+    </Text>
+    <Text style={styles.sumValue}>
+      {totalTeachers}
+    </Text>
+  </View>
 
-          <View
-            style={[
-              styles.summaryCard,
-              styles.absentCard,
-            ]}
-          >
-            <Text style={styles.sumLabel}>
-              Absent
-            </Text>
-            <Text style={styles.sumValue}>
-              {totalAbsent}
-            </Text>
-          </View>
+  <View
+    style={[
+      styles.summaryCard,
+      styles.absentCard,
+    ]}
+  >
+    <Text style={styles.sumLabel}>
+      Absent
+    </Text>
+    <Text style={styles.sumValue}>
+      {totalAbsent}
+    </Text>
+  </View>
 
-        </View>
+  <TouchableOpacity
+    style={styles.resetAllBtn}
+    onPress={resetAllAbsent}
+  >
+    <Text style={styles.btnText}>
+      All Reset
+    </Text>
+  </TouchableOpacity>
+
+</View>
       </View>
 
       {/* LIST */}
@@ -318,5 +414,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
   },
+
+  buttonRow: {
+    flexDirection: "row",
+    gap: 5,
+  },
+
+  resetBtn: {
+    backgroundColor: "#2563eb",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  resetAllBtn: {
+  backgroundColor: "#16a34a",
+  paddingVertical: 6,
+  paddingHorizontal: 16,
+  borderRadius: 10,
+  alignItems: "center",
+  justifyContent: "center",
+},
 
 });

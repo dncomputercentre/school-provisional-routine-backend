@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,16 +6,14 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
-  TextInput,
   ScrollView,
   Alert,
 } from "react-native";
 import api from "../api/api";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 
 export default function TeacherNormalRoutineScreen() {
-
-  /* ================= DAY LIST ================= */
-
   const dayList = [
     "Monday",
     "Tuesday",
@@ -25,153 +23,326 @@ export default function TeacherNormalRoutineScreen() {
     "Saturday",
   ];
 
-  /* ================= STATE ================= */
-
   const [day, setDay] = useState("");
   const [dayModal, setDayModal] = useState(false);
 
-  const [search, setSearch] = useState("");
   const [routine, setRoutine] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  /* ================= LOAD ROUTINE ================= */
+  const [teachers, setTeachers] = useState([]);
+  const [teacherId, setTeacherId] = useState("");
+  const [teacherName, setTeacherName] = useState("");
+  const [teacherModal, setTeacherModal] = useState(false);
 
-  const loadRoutine = async (selectedDay) => {
+  const loadTeachers = async () => {
     try {
+      const res = await api.get("/teachers");
+      setTeachers(res.data.data || []);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  useEffect(() => {
+    loadTeachers();
+  }, []);
+
+  const loadRoutine = async (
+    selectedTeacherId = teacherId,
+    selectedDay = day
+  ) => {
+    try {
+
       setLoading(true);
 
       const res = await api.get(
-        `/teacher-normal-routine/${selectedDay}`
+        "/teacher-normal-routine",
+        {
+          params: {
+            teacherId:
+              selectedTeacherId || undefined,
+            day:
+              selectedDay || undefined,
+          },
+        }
       );
 
       setRoutine(res.data.data || []);
 
     } catch (err) {
-      Alert.alert("Routine load failed");
+
+      console.log(err);
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
-  /* ================= SEARCH FILTER ================= */
+  const days = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
 
-  const filteredRoutine = routine.filter((r) => {
+  const periodOrder = {
+    First: 1,
+    Second: 2,
+    Third: 3,
+    Fourth: 4,
+    Fifth: 5,
+    Sixth: 6,
+    Seventh: 7,
+    Eight: 8,
+  };
 
-    if (!search) return true;
+  const groupedRoutine = days.map((d) => ({
+    day: d,
+    routines: routine
+      .filter((item) => item.day === d)
+      .sort(
+        (a, b) =>
+          (periodOrder[a.period] || 99) -
+          (periodOrder[b.period] || 99)
+      ),
+  }));
+  const generateTeacherPdf = async () => {
+  try {
 
-    const teacherName =
-      r.teacher?.name || "";
+    const pdfUrl =
+      `${api.defaults.baseURL}/teacher-pdf?teacherId=${teacherId}`;
 
-    const subject =
-      r.subject || "";
+    const fileUri =
+      FileSystem.documentDirectory +
+      "teacher-routine.pdf";
 
-    return (
-      teacherName
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      subject
-        .toLowerCase()
-        .includes(search.toLowerCase())
+    const result =
+      await FileSystem.downloadAsync(
+        pdfUrl,
+        fileUri
+      );
+
+    await Sharing.shareAsync(
+      result.uri
     );
-  });
 
-  /* ================= UI ================= */
+  } catch (err) {
 
+    console.log(
+      "PDF ERROR =>",
+      err
+    );
+
+    Alert.alert(
+      "Error",
+      "PDF Generation Failed"
+    );
+  }
+};
   return (
     <ScrollView style={styles.container}>
-
       <Text style={styles.title}>
         Teachers Normal Routine
       </Text>
 
-      {/* 🔥 DAY + SEARCH ROW 🔥 */}
       <View style={styles.topRow}>
 
-        {/* DAY SELECT */}
+        <TouchableOpacity
+          style={styles.dropdownHalf}
+          onPress={() => setTeacherModal(true)}
+        >
+          <Text>
+            {teacherName || "Select Teacher"}
+          </Text>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.dropdownHalf}
           onPress={() => setDayModal(true)}
         >
-          <Text>{day || "Select Day"}</Text>
+          <Text>
+            {day || "Select Day"}
+          </Text>
         </TouchableOpacity>
 
-        {/* SEARCH */}
-        <TextInput
-          style={styles.searchHalf}
-          placeholder="Search..."
-          value={search}
-          onChangeText={setSearch}
-        />
-
       </View>
-
-      {/* LOADING */}
       {loading && (
-        <Text style={{ textAlign: "center" }}>
+        <Text style={styles.loading}>
           Loading...
         </Text>
       )}
+{teacherName !== "" && (
+  <View
+    style={{
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 15,
+    }}
+  >
+    <Text
+      style={{
+        fontSize: 24,
+        fontWeight: "bold",
+        color: "#1e3a8a",
+      }}
+    >
+      {teacherName}
+    </Text>
 
-      {/* ROUTINE CARD */}
-      {filteredRoutine.map((item, index) => {
+    <TouchableOpacity
+      style={styles.pdfBtn}
+      onPress={generateTeacherPdf}
+    >
+      <Text style={styles.btnText}>
+        Convert PDF
+      </Text>
+    </TouchableOpacity>
+  </View>
+)}
 
-        const teacherName =
-          item.teacher?.name || "No Teacher";
+      {groupedRoutine.map((group) => {
+
+        if (group.routines.length === 0)
+          return null;
 
         return (
-          <View key={index} style={styles.card}>
 
-            <Text style={styles.teacher}>
-              👨‍🏫 {teacherName}
+          <View key={group.day}>
+
+            <Text
+              style={{
+                fontSize: 20,
+                fontWeight: "bold",
+                marginBottom: 10,
+                marginTop: 10,
+                color: "#2563eb",
+              }}
+            >
+              {group.day}
             </Text>
 
-            <Text>
-              📚 Subject: {item.subject}
-            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            >
 
-            <Text>
-              🏫 Class: {item.className}
-            </Text>
+              {group.routines.map((item, index) => (
 
-            <Text>
-              🧩 Section: {item.section}
-            </Text>
+                <View
+                  key={index}
+                  style={styles.routineCard}
+                >
 
-            <Text>
-              ⏰ Period: {item.period}
-            </Text>
+                  <Text
+                    style={styles.periodText}
+                  >
+                    {item.period}
+                  </Text>
 
-            <Text>
-              🕒 Time: {item.time}
-            </Text>
+                  <Text>
+                    {item.time}
+                  </Text>
+
+                  <Text
+                    style={styles.subjectText}
+                  >
+                    {item.subject}
+                  </Text>
+
+                  <Text>
+                    {item.className}
+                  </Text>
+
+                  <Text>
+                    {item.section}
+                  </Text>
+
+                </View>
+
+              ))}
+
+            </ScrollView>
 
           </View>
+
         );
+
       })}
 
-      {/* NO DATA */}
-      {!loading && filteredRoutine.length === 0 && (
-        <Text style={{ textAlign: "center", marginTop: 20 }}>
-          No Routine Found
-        </Text>
-      )}
-
-      {/* DAY MODAL */}
-      <Modal visible={dayModal} transparent>
-
+      {!loading &&
+        teacherName !== "" &&
+        routine.length === 0 && (
+          <Text style={styles.noData}>
+            No Routine Found
+          </Text>
+        )}
+      <Modal
+        visible={teacherModal}
+        transparent
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
 
             <FlatList
+              data={teachers}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.modalItem}
+                  onPress={() => {
+                    setTeacherId(item.id);
+                    setTeacherName(item.name);
+                    setTeacherModal(false);
+
+                    setDay("");
+                    loadRoutine(item.id, "");
+                  }}
+                >
+                  <Text>{item.name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={() =>
+                setTeacherModal(false)
+              }
+            >
+              <Text style={{ color: "#fff" }}>
+                Close
+              </Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </Modal>
+      <Modal
+        visible={dayModal}
+        transparent
+        animationType="slide"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <FlatList
               data={dayList}
-              keyExtractor={(i) => i}
+              keyExtractor={(item) => item}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.modalItem}
                   onPress={() => {
                     setDay(item);
                     setDayModal(false);
-                    loadRoutine(item);
+
+                    loadRoutine(
+                      teacherId,
+                      item
+                    );
                   }}
                 >
                   <Text>{item}</Text>
@@ -187,74 +358,92 @@ export default function TeacherNormalRoutineScreen() {
                 Close
               </Text>
             </TouchableOpacity>
-
           </View>
         </View>
-
       </Modal>
-
     </ScrollView>
   );
 }
 
-/* ================= STYLES ================= */
-
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
-    padding: 15,
     backgroundColor: "#f1f5f9",
+    padding: 15,
   },
 
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 15,
     textAlign: "center",
+    marginBottom: 15,
+    color: "#1e3a8a",
   },
 
-  /* 🔥 TOP ROW STYLE 🔥 */
   topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: 15,
   },
 
   dropdownHalf: {
-    backgroundColor: "#fff",
-    padding: 14,
-    borderRadius: 8,
-    borderWidth: 1,
     width: "48%",
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 14,
+  },
+
+  dropdownText: {
+    color: "#333",
   },
 
   searchHalf: {
-    backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
     width: "48%",
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+  },
+
+  loading: {
+    textAlign: "center",
+    marginTop: 20,
+  },
+
+  noData: {
+    textAlign: "center",
+    marginTop: 20,
+    color: "red",
+    fontSize: 16,
   },
 
   card: {
     backgroundColor: "#fff",
-    padding: 15,
     borderRadius: 10,
+    padding: 15,
     marginBottom: 12,
     elevation: 3,
   },
 
   teacher: {
+    fontSize: 16,
     fontWeight: "bold",
-    marginBottom: 5,
     color: "#1e3a8a",
+    marginBottom: 8,
+  },
+
+  info: {
+    fontSize: 14,
+    marginBottom: 3,
   },
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.4)",
     padding: 20,
   },
 
@@ -266,16 +455,46 @@ const styles = StyleSheet.create({
   },
 
   modalItem: {
-    padding: 12,
+    padding: 15,
     borderBottomWidth: 1,
+    borderBottomColor: "#eee",
   },
 
   closeBtn: {
+    marginTop: 10,
     backgroundColor: "#2563eb",
     padding: 12,
     borderRadius: 8,
-    marginTop: 10,
     alignItems: "center",
   },
+  searchBtn: {
+    backgroundColor: "#2563eb",
+    padding: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 15,
+  },
 
+  routineCard: {
+    width: 180,
+    backgroundColor: "#fff",
+    padding: 15,
+    borderRadius: 15,
+    marginRight: 10,
+    marginBottom: 15,
+    elevation: 4,
+  },
+
+  periodText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#2563eb",
+  },
+
+  subjectText: {
+    marginTop: 5,
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#059669",
+  },
 });
