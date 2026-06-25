@@ -8,7 +8,10 @@ export const generateRoutinePdf = async (req, res) => {
     const routines = await prisma.classRoutine.findMany({
       where: {
         className,
-        section,
+        OR: [
+          { section },
+          { section: "Combined" },
+        ],
       },
       include: {
         teacher: true,
@@ -31,23 +34,37 @@ export const generateRoutinePdf = async (req, res) => {
     // ================= HEADER =================
 
     doc
-      .fontSize(16)
-      .text(
-        `Class - ${className}          Section - ${section}`,
-        {
-          align: "center",
-        }
-      );
+      .fontSize(20)
+      .font("Helvetica-Bold")
+      .text("Bhangar High School (H.S)", {
+        align: "center",
+      });
 
-    doc.moveDown(1);
+    doc
+      .moveDown(0.2)
+      .fontSize(13)
+      .font("Helvetica")
+      .text("Bhangar, South 24 Pgs (S)", {
+        align: "center",
+      });
+
+    doc
+      .moveDown(0.4)
+      .fontSize(17)
+      .font("Helvetica-Bold")
+      .text(`Class : ${className}   |   Section : ${section}`, {
+        align: "center",
+      });
+
+    doc.moveDown(2);
 
     // ================= TABLE SETTINGS =================
 
     const startX = 40;
-    const startY = 80;
+    const startY = doc.y + 20;
 
     const dayColWidth = 85;
-    const periodWidth = 90;
+    const periodWidth = 75;
 
     const periods = [
       "First",
@@ -58,6 +75,7 @@ export const generateRoutinePdf = async (req, res) => {
       "Sixth",
       "Seventh",
       "Eight",
+      "Extra",
     ];
 
     const days = [
@@ -125,7 +143,7 @@ export const generateRoutinePdf = async (req, res) => {
 
     // ================= DAY ROWS =================
 
-    const rowHeight = 70;
+    const rowHeight = 68;
 
     days.forEach((day, rowIndex) => {
 
