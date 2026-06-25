@@ -105,7 +105,10 @@ export const filterRoutines = async (req, res) => {
       await prisma.classRoutine.findMany({
         where: {
           className,
-          section,
+          OR: [
+            { section },
+            { section: "Combined" }
+          ]
         },
         include: {
           teacher: true,
