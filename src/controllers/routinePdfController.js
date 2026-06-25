@@ -61,7 +61,7 @@ export const generateRoutinePdf = async (req, res) => {
     // ================= TABLE SETTINGS =================
 
     const startX = 40;
-    const startY = doc.y + 20;
+    const startY = 90;
 
     const dayColWidth = 85;
     const periodWidth = 75;
