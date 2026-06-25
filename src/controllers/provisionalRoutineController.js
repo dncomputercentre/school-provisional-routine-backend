@@ -1,40 +1,41 @@
 import prisma from "../prismaClient.js";
 
+const MAX_PROVISIONAL_PER_DAY = 2;
+
 export const getProvisionalRoutineByDay = async (req, res) => {
   try {
-
     const { day } = req.params;
-
-    /* ===== TODAY DATE ===== */
 
     const today = new Date();
 
-    const start = new Date(
-      today.setHours(0, 0, 0, 0)
-    );
+    const start = new Date(today);
+    start.setHours(0, 0, 0, 0);
 
-    const end = new Date(
-      today.setHours(23, 59, 59, 999)
-    );
+    const end = new Date(today);
+    end.setHours(23, 59, 59, 999);
 
-    /* ===== NORMAL ROUTINE ===== */
+    // ===========================
+    // Load Data
+    // ===========================
 
-    const routines =
-      await prisma.classRoutine.findMany({
-        where: {
-          day: {
-            equals: day,
-            mode: "insensitive",
-          },
+    const routines = await prisma.classRoutine.findMany({
+      where: {
+        day: {
+          equals: day,
+          mode: "insensitive",
         },
-        include: {
-          teacher: true,
+      },
+      include: {
+        teacher: true,
+      },
+      orderBy: [
+        {
+          time: "asc",
         },
-      });
+      ],
+    });
 
-    /* ===== ABSENT ===== */
-
-    const absents =
+    const absentTeachers =
       await prisma.schoolTeacherAbsent.findMany({
         where: {
           date: {
@@ -44,62 +45,371 @@ export const getProvisionalRoutineByDay = async (req, res) => {
         },
       });
 
-    /* ===== TEACHERS ===== */
-
     const teachers =
       await prisma.schoolTeacher.findMany();
 
-    /* ===== LOGIC ===== */
+    const absentIds = absentTeachers.map(
+      (a) => a.teacherId
+    );
 
-    const result = routines.map((r) => {
+    // কতগুলো provisional already পেয়েছে
+    const teacherLoad = {};
 
-      const absent = absents.find(
-        (a) => a.teacherId === r.teacherId
+    teachers.forEach((t) => {
+      teacherLoad[t.id] = 0;
+    });
+
+    // ===========================
+    // Helper Function
+    // ===========================
+
+    function isSeniorClass(className) {
+      return (
+        className.includes("XI") ||
+        className.includes("XII")
       );
+    }
 
-      if (!absent) {
-        return {
-          ...r,
+    function isTeacherBusy(
+      teacherId,
+      time,
+      day
+    ) {
+      return routines.some(
+        (r) =>
+          r.teacherId === teacherId &&
+          r.day === day &&
+          r.time === time
+      );
+    }
+
+    function isTeacherAbsent(
+      teacherId
+    ) {
+      return absentIds.includes(
+        teacherId
+      );
+    }
+
+    function isTeacherOverloaded(
+      teacherId
+    ) {
+      return (
+        teacherLoad[teacherId] >=
+        MAX_PROVISIONAL_PER_DAY
+      );
+    }
+
+    // একই সময়ে provisional পেয়েছে?
+    const provisionalTimeMap = {};
+
+    function alreadyAssigned(
+      teacherId,
+      day,
+      time
+    ) {
+
+      const key =
+        teacherId +
+        "_" +
+        day +
+        "_" +
+        time;
+
+      return provisionalTimeMap[key];
+    }
+
+    function assignTeacher(
+      teacherId,
+      day,
+      time
+    ) {
+
+      const key =
+        teacherId +
+        "_" +
+        day +
+        "_" +
+        time;
+
+      provisionalTimeMap[key] = true;
+
+      teacherLoad[teacherId]++;
+
+    }
+
+    // ===========================
+    // Build Provisional Routine
+    // ===========================
+
+    const result = [];
+
+    for (const routine of routines) {
+
+      // Teacher উপস্থিত থাকলে
+      if (!isTeacherAbsent(routine.teacherId)) {
+
+        result.push({
+          ...routine,
           isAbsent: false,
           substituteTeacher: null,
-        };
+          reason: null,
+        });
+
+        continue;
       }
 
-      const isSenior =
-        r.className.includes("XI") ||
-        r.className.includes("XII");
+      // XI / XII হলে Substitute হবে না
+      if (isSeniorClass(routine.className)) {
 
-      if (isSenior) {
-        return {
-          ...r,
+        result.push({
+          ...routine,
           isAbsent: true,
           substituteTeacher: null,
-        };
+          reason: "Senior Class",
+        });
+
+        continue;
       }
 
-      const substitute =
-        teachers.find((t) =>
-          t.mainSubject === r.subject ||
-          (t.optionalSubjects || [])
-            .includes(r.subject)
+      let candidate = null;
+      let reason = "";
+
+      // ===========================
+      // Priority 1 : Main Subject
+      // ===========================
+
+      let freeTeachers = teachers.filter((t) => {
+
+        if (t.id === routine.teacherId)
+          return false;
+
+        if (isTeacherAbsent(t.id))
+          return false;
+
+        if (isTeacherBusy(
+          t.id,
+          routine.time,
+          routine.day
+        ))
+          return false;
+
+        if (alreadyAssigned(
+          t.id,
+          routine.day,
+          routine.time
+        ))
+          return false;
+
+        if (isTeacherOverloaded(t.id))
+          return false;
+
+        return (
+          t.mainSubject.toLowerCase() ===
+          routine.subject.toLowerCase()
         );
 
-      return {
-        ...r,
+      });
+
+      if (freeTeachers.length > 0) {
+
+        freeTeachers.sort((a, b) => {
+
+          if (
+            teacherLoad[a.id] !==
+            teacherLoad[b.id]
+          ) {
+            return (
+              teacherLoad[a.id] -
+              teacherLoad[b.id]
+            );
+          }
+
+          return a.name.localeCompare(b.name);
+
+        });
+
+        candidate = freeTeachers[0];
+        reason = "Main Subject";
+
+      }
+
+      // ===========================
+      // Priority 2 : Optional Subject
+      // ===========================
+
+      if (!candidate) {
+
+        freeTeachers =
+          teachers.filter((t) => {
+
+            if (t.id === routine.teacherId)
+              return false;
+
+            if (isTeacherAbsent(t.id))
+              return false;
+
+            if (isTeacherBusy(
+              t.id,
+              routine.time,
+              routine.day
+            ))
+              return false;
+
+            if (alreadyAssigned(
+              t.id,
+              routine.day,
+              routine.time
+            ))
+              return false;
+
+            if (isTeacherOverloaded(t.id))
+              return false;
+
+            return t.optionalSubjects.some(
+              (s) =>
+                s.toLowerCase() ===
+                routine.subject.toLowerCase()
+            );
+
+          });
+
+        if (freeTeachers.length > 0) {
+          freeTeachers.sort((a, b) => {
+
+            if (
+              teacherLoad[a.id] !==
+              teacherLoad[b.id]
+            ) {
+              return (
+                teacherLoad[a.id] -
+                teacherLoad[b.id]
+              );
+            }
+
+            return a.name.localeCompare(b.name);
+
+          });
+
+          candidate = freeTeachers[0];
+          reason = "Optional Subject";
+
+        }
+
+      }
+
+      // ===========================
+      // Priority 3 : Any Free Teacher
+      // ===========================
+
+      if (!candidate) {
+
+        freeTeachers =
+          teachers.filter((t) => {
+
+            if (t.id === routine.teacherId)
+              return false;
+
+            if (isTeacherAbsent(t.id))
+              return false;
+
+            if (isTeacherBusy(
+              t.id,
+              routine.time,
+              routine.day
+            ))
+              return false;
+
+            if (alreadyAssigned(
+              t.id,
+              routine.day,
+              routine.time
+            ))
+              return false;
+
+            if (isTeacherOverloaded(t.id))
+              return false;
+
+            return true;
+
+          });
+
+        if (freeTeachers.length > 0) {
+
+          freeTeachers.sort((a, b) => {
+
+            if (
+              teacherLoad[a.id] !==
+              teacherLoad[b.id]
+            ) {
+              return (
+                teacherLoad[a.id] -
+                teacherLoad[b.id]
+              );
+            }
+
+            return a.name.localeCompare(b.name);
+
+          });
+
+          candidate = freeTeachers[0];
+          reason = "Free Teacher";
+
+        }
+
+      }
+
+      if (candidate) {
+
+        assignTeacher(
+          candidate.id,
+          routine.day,
+          routine.time
+        );
+
+      }
+
+      result.push({
+        ...routine,
         isAbsent: true,
-        substituteTeacher: substitute || null,
-      };
+        substituteTeacher:
+          candidate || null,
+        reason:
+          candidate
+            ? reason
+            : "No Substitute Available",
+      });
+
+    }
+    // ===========================
+    // Response
+    // ===========================
+
+    result.sort((a, b) => {
+
+      if (a.day !== b.day) {
+        return a.day.localeCompare(b.day);
+      }
+
+      return a.time.localeCompare(b.time);
+
     });
 
     res.json({
       success: true,
+      totalClasses: result.length,
+      totalAbsentTeachers: absentIds.length,
       data: result,
     });
 
   } catch (err) {
+
     console.log(err);
+
     res.status(500).json({
-      message: "Server error",
+      success: false,
+      message: err.message,
     });
+
   }
 };
