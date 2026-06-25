@@ -52,7 +52,7 @@ export const generateRoutinePdf = async (req, res) => {
       .moveDown(0.4)
       .fontSize(17)
       .font("Helvetica-Bold")
-      .text(`Class : ${className}   |   Section : ${section}`, {
+      .text(`Class : ${className}   |   ${section}`, {
         align: "center",
       });
 
