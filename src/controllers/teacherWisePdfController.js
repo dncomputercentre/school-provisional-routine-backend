@@ -39,7 +39,7 @@ export const generateTeacherPdf = async (req, res) => {
     const startY = 80;
 
     const dayColWidth = 85;
-    const periodWidth = 90;
+    const periodWidth = 78;
     const rowHeight = 70;
 
     const periods = [
@@ -51,6 +51,7 @@ export const generateTeacherPdf = async (req, res) => {
       "Sixth",
       "Seventh",
       "Eight",
+      "Extra",
     ];
 
     const days = [
