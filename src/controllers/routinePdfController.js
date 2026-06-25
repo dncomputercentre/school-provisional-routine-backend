@@ -184,54 +184,59 @@ export const generateRoutinePdf = async (req, res) => {
             rowHeight
           ).stroke();
 
-          const item =
-            routines.find(
-              (r) =>
-                r.day === day &&
-                r.period === period
-            );
+          const items = routines.filter(
+            (r) =>
+              r.day === day &&
+              r.period === period
+          );
 
-          if (item) {
+          if (items.length > 0) {
 
-            doc
-              .fontSize(10)
-              .text(
-                item.subject || "",
-                x + 5,
-                y + 10,
-                {
-                  width:
-                    periodWidth - 10,
-                  align: "center",
-                }
-              );
+            let text = "";
+
+            items.forEach((item) => {
+              text += `${item.subject}\n${item.teacher?.name}\n\n`;
+            });
 
             doc
               .fontSize(9)
               .text(
-                item.teacher?.name || "",
+                text,
                 x + 5,
-                y + 32,
+                y + 8,
                 {
-                  width:
-                    periodWidth - 10,
+                  width: periodWidth - 10,
                   align: "center",
                 }
               );
           }
+
+          doc
+            .fontSize(9)
+            .text(
+              item.teacher?.name || "",
+              x + 5,
+              y + 32,
+              {
+                width:
+                  periodWidth - 10,
+                align: "center",
+              }
+            );
         }
-      );
-    });
+        }
+    );
+  });
 
-    doc.end();
+  doc.end();
 
-  } catch (err) {
+} catch (err) {
 
-    console.log(err);
+  console.log(err);
 
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
+  res.status(500).json({
+    success: false,
+    message: err.message,
+  });
+}
 };
