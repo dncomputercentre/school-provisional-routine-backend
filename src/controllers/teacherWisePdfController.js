@@ -27,12 +27,32 @@ export const generateTeacherPdf = async (req, res) => {
 
     doc.pipe(res);
 
+    // ================= SCHOOL HEADER =================
+
     doc
-      .fontSize(16)
-      .text(`${teacherName} Routine`, {
+      .fontSize(20)
+      .font("Helvetica-Bold")
+      .text("Bhangar High School (H.S)", {
         align: "center",
       });
 
+    doc
+      .moveDown(0.2)
+      .fontSize(13)
+      .font("Helvetica")
+      .text("Bhangar, South 24 Pgs", {
+        align: "center",
+      });
+
+    doc
+      .moveDown(0.4)
+      .fontSize(17)
+      .font("Helvetica-Bold")
+      .text(`Teacher Name : ${teacherName}`, {
+        align: "center",
+      });
+
+    doc.moveDown(1);
     doc.moveDown();
 
     const startX = 40;
