@@ -216,34 +216,21 @@ export const generateRoutinePdf = async (req, res) => {
                 }
               );
           }
+
         });
 
-      doc
-        .fontSize(9)
-        .text(
-          item.teacher?.name || "",
-          x + 5,
-          y + 32,
-          {
-            width:
-              periodWidth - 10,
-            align: "center",
-          }
-        );
-    }
-        }
-    );
-  });
+    });
 
-doc.end();
+    doc.end();
 
-} catch (err) {
+  } catch (err) {
 
-  console.log(err);
+    console.log(err);
 
-  res.status(500).json({
-    success: false,
-    message: err.message,
-  });
-}
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+
+  }
 };
