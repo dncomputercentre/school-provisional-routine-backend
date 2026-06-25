@@ -38,9 +38,9 @@ export const generateTeacherPdf = async (req, res) => {
     const startX = 40;
     const startY = 80;
 
-    const dayColWidth = 85;
-    const periodWidth = 78;
-    const rowHeight = 70;
+    const dayColWidth = 83;
+    const periodWidth = 75;
+    const rowHeight = 68;
 
     const periods = [
       "First",
