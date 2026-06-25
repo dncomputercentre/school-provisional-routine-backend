@@ -198,18 +198,32 @@ export const generateRoutinePdf = async (req, res) => {
 
           if (items.length > 0) {
 
-            let text = "";
+            const subjects = items
+              .map(i => i.subject)
+              .join(" / ");
 
-            items.forEach((item) => {
-              text += `${item.subject}\n${item.teacher?.name}\n\n`;
-            });
+            const teachers = items
+              .map(i => i.teacher?.name)
+              .join(" / ");
+
+            doc
+              .fontSize(10)
+              .text(
+                subjects,
+                x + 5,
+                y + 10,
+                {
+                  width: periodWidth - 10,
+                  align: "center",
+                }
+              );
 
             doc
               .fontSize(9)
               .text(
-                text,
+                teachers,
                 x + 5,
-                y + 8,
+                y + 30,
                 {
                   width: periodWidth - 10,
                   align: "center",
