@@ -56,7 +56,7 @@ export const generateTeacherPdf = async (req, res) => {
     doc.moveDown();
 
     const startX = 40;
-    const startY =140;
+    const startY = 120;
 
     const dayColWidth = 83;
     const periodWidth = 75;
