@@ -17,7 +17,13 @@ export const generateRoutinePdf = async (req, res) => {
         teacher: true,
       },
     });
-
+    console.log(
+      routines.filter(
+        r =>
+          r.day === "Monday" &&
+          r.period === "Eight"
+      )
+    );
     const doc = new PDFDocument({
       size: "A4",
       layout: "landscape",
@@ -210,25 +216,26 @@ export const generateRoutinePdf = async (req, res) => {
                 }
               );
           }
+        });
 
-          doc
-            .fontSize(9)
-            .text(
-              item.teacher?.name || "",
-              x + 5,
-              y + 32,
-              {
-                width:
-                  periodWidth - 10,
-                align: "center",
-              }
-            );
-        }
+      doc
+        .fontSize(9)
+        .text(
+          item.teacher?.name || "",
+          x + 5,
+          y + 32,
+          {
+            width:
+              periodWidth - 10,
+            align: "center",
+          }
+        );
+    }
         }
     );
   });
 
-  doc.end();
+doc.end();
 
 } catch (err) {
 
