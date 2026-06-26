@@ -63,6 +63,13 @@ export const getProvisionalRoutineByDay = async (req, res) => {
 
     const teachers =
       await prisma.schoolTeacher.findMany();
+    console.log(
+      teachers.map((t) => ({
+        name: t.name,
+        mainSubject: t.mainSubject,
+        optionalSubjects: t.optionalSubjects,
+      }))
+    );
 
     const absentIds = absentTeachers.map(
       (a) => a.teacherId
@@ -221,8 +228,8 @@ export const getProvisionalRoutineByDay = async (req, res) => {
           return false;
 
         return (
-          t.mainSubject.toLowerCase() ===
-          routine.subject.toLowerCase()
+          (t.mainSubject || "").toLowerCase() ===
+          (routine.subject || "").toLowerCase()
         );
 
       });
@@ -282,10 +289,10 @@ export const getProvisionalRoutineByDay = async (req, res) => {
             if (isTeacherOverloaded(t.id))
               return false;
 
-            return t.optionalSubjects.some(
+            return (t.optionalSubjects || []).some(
               (s) =>
-                s.toLowerCase() ===
-                routine.subject.toLowerCase()
+                (s || "").toLowerCase() ===
+                (routine.subject || "").toLowerCase()
             );
 
           });
