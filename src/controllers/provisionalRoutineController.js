@@ -2,6 +2,22 @@ import prisma from "../prismaClient.js";
 
 const MAX_PROVISIONAL_PER_DAY = 2;
 
+const getDayNameFromDate = (dateString) => {
+  const date = new Date(dateString);
+
+  const days = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
+  return days[date.getDay()];
+};
+
 export const getProvisionalRoutineByDay = async (req, res) => {
   try {
     const { day } = req.params;
@@ -412,4 +428,55 @@ export const getProvisionalRoutineByDay = async (req, res) => {
     });
 
   }
+};
+
+// ================= TODAY PROVISIONAL ROUTINE =================
+
+export const getTodayProvisionalRoutine = async (req, res) => {
+  try {
+
+    const today = new Date();
+
+    const dayNames = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+
+    const day = dayNames[today.getDay()];
+
+    // আগের Function-টাই ব্যবহার করা হবে
+    req.params.day = day;
+
+    return getProvisionalRoutineByDay(req, res);
+
+  } catch (err) {
+
+    console.log(err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+
+  }
+};
+// ================= DATE WISE PROVISIONAL ROUTINE =================
+
+export const getDateWiseProvisionalRoutine = async (req, res) => {
+  return res.status(501).json({
+    success: false,
+    message: "Date Wise Routine is under development",
+  });
+};
+
+export const getTeacherWiseReport = async (req, res) => {
+  return res.status(501).json({
+    success: false,
+    message: "Teacher Wise Report is under development",
+  });
 };
