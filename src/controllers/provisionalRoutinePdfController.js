@@ -1,5 +1,8 @@
 import PDFDocument from "pdfkit";
 import prisma from "../prismaClient.js";
+import {
+  buildProvisionalRoutine,
+} from "../utils/provisionalRoutineLogic.js";
 
 // ============================================
 // PROVISIONAL ROUTINE PDF
@@ -9,19 +12,26 @@ export const generateProvisionalRoutinePdf = async (
   req,
   res
 ) => {
+
   try {
+
+    // ========================================
+    // GET DATE
+    // ========================================
 
     const { date } = req.query;
 
     if (!date) {
+
       return res.status(400).json({
         success: false,
         message: "Date is required",
       });
+
     }
 
     // ========================================
-    // Date
+    // DATE SETTINGS
     // ========================================
 
     const selectedDate = new Date(date);
@@ -46,49 +56,98 @@ export const generateProvisionalRoutinePdf = async (
       dayNames[selectedDate.getDay()];
 
     // ========================================
-    // Load Routine
+    // LOAD CLASS ROUTINE
     // ========================================
 
     const routines =
       await prisma.classRoutine.findMany({
+
         where: {
           day,
         },
+
         include: {
           teacher: true,
         },
-        orderBy: [
-          {
-            period: "asc",
-          },
-        ],
+
+        orderBy: {
+          time: "asc",
+        },
+
       });
 
     // ========================================
-    // Load Absent Teachers
+    // LOAD ABSENT TEACHERS
     // ========================================
 
     const absentTeachers =
       await prisma.schoolTeacherAbsent.findMany({
+
         where: {
           date: {
             gte: start,
             lte: end,
           },
         },
+
         include: {
           teacher: true,
         },
+
+        orderBy: {
+          teacher: {
+            name: "asc",
+          },
+        },
+
       });
 
     // ========================================
-    // PDF Setup
+    // LOAD ALL TEACHERS
+    // ========================================
+
+    const teachers =
+      await prisma.schoolTeacher.findMany({
+
+        orderBy: {
+          name: "asc",
+        },
+
+      });
+
+    // ========================================
+    // ABSENT IDS
+    // ========================================
+
+    const absentIds =
+      absentTeachers.map(
+        (a) => a.teacherId
+      );
+
+    // ========================================
+    // BUILD PROVISIONAL ROUTINE
+    // (Same Logic as Mobile)
+    // ========================================
+
+    const provisionalData =
+      buildProvisionalRoutine(
+        routines,
+        teachers,
+        absentIds
+      );
+
+    // ========================================
+    // PDF SETUP
     // ========================================
 
     const doc = new PDFDocument({
+
       size: "A4",
+
       layout: "landscape",
+
       margin: 20,
+
     });
 
     res.setHeader(
@@ -103,7 +162,7 @@ export const generateProvisionalRoutinePdf = async (
 
     doc.pipe(res);
 
-    // ========================================
+        // ========================================
     // HEADER
     // ========================================
 
@@ -117,32 +176,43 @@ export const generateProvisionalRoutinePdf = async (
         }
       );
 
-    doc.moveDown(0.4);
+    doc
+      .moveDown(0.2)
+      .font("Helvetica")
+      .fontSize(12)
+      .text(
+        "Bhangar, South 24 Parganas",
+        {
+          align: "center",
+        }
+      );
+
+    doc.moveDown(0.3);
 
     doc
       .font("Helvetica-Bold")
-      .fontSize(12);
+      .fontSize(11);
 
     doc.text(
       `Date : ${date}`,
-      300,
-      58
+      280,
+      60
     );
 
     doc.text(
       `Day : ${day}`,
-      470,
-      58
+      450,
+      60
     );
 
     doc.text(
       `Absent Teacher : ${absentTeachers.length}`,
-      620,
-      58
+      610,
+      60
     );
 
     // ========================================
-    // Table Settings
+    // TABLE SETTINGS
     // ========================================
 
     const startX = 20;
@@ -164,11 +234,9 @@ export const generateProvisionalRoutinePdf = async (
       "Extra",
     ];
 
-        // ========================================
-    // TABLE HEADER
     // ========================================
-
-    // Absent Teacher Header
+    // HEADER CELL
+    // ========================================
 
     doc
       .rect(
@@ -193,49 +261,42 @@ export const generateProvisionalRoutinePdf = async (
       );
 
     // ========================================
-    // PERIOD HEADERS
+    // PERIOD HEADER
     // ========================================
 
-    periods.forEach(
-      (period, index) => {
+    periods.forEach((period, index) => {
 
-        const x =
-          startX +
-          teacherWidth +
-          index * periodWidth;
+      const x =
+        startX +
+        teacherWidth +
+        index * periodWidth;
 
-        // Cell Border
+      doc
+        .rect(
+          x,
+          startY,
+          periodWidth,
+          rowHeight
+        )
+        .stroke();
 
-        doc
-          .rect(
-            x,
-            startY,
-            periodWidth,
-            rowHeight
-          )
-          .stroke();
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(10)
+        .text(
+          `${period}`,
+          x,
+          startY + 15,
+          {
+            width: periodWidth,
+            align: "center",
+          }
+        );
 
-        // Period Name
-
-        doc
-          .font("Helvetica-Bold")
-          .fontSize(10)
-          .text(
-            `${period} Period`,
-            x + 2,
-            startY + 5,
-            {
-              width:
-                periodWidth - 4,
-              align: "center",
-            }
-          );
-
-      }
-    );
+    });
 
     // ========================================
-    // GRID DRAWING
+    // GRID DRAW
     // ========================================
 
     const totalRows =
@@ -255,7 +316,7 @@ export const generateProvisionalRoutinePdf = async (
         rowHeight +
         row * rowHeight;
 
-      // Absent Teacher Column
+      // Teacher Column
 
       doc
         .rect(
@@ -268,66 +329,67 @@ export const generateProvisionalRoutinePdf = async (
 
       // Period Columns
 
-      periods.forEach(
-        (_, col) => {
+      periods.forEach((_, col) => {
 
-          const x =
-            startX +
-            teacherWidth +
-            col *
-              periodWidth;
+        const x =
+          startX +
+          teacherWidth +
+          col * periodWidth;
 
-          doc
-            .rect(
-              x,
-              y,
-              periodWidth,
-              rowHeight
-            )
-            .stroke();
+        doc
+          .rect(
+            x,
+            y,
+            periodWidth,
+            rowHeight
+          )
+          .stroke();
 
-        }
-      );
+      });
 
     }
-    // ========================================
+        // ========================================
     // GROUP ABSENT TEACHERS
     // ========================================
 
     const teacherRows = absentTeachers.map(
-      (absent) => {
+      (absent) => ({
 
-        return {
+        teacherId: absent.teacherId,
 
-          teacherId: absent.teacherId,
+        teacherName:
+          absent.teacher?.name || "",
 
-          teacherName:
-            absent.teacher?.name || "",
+        periods: {},
 
-          periods: {},
+      })
+    );
 
-        };
+    // ========================================
+    // SORT TEACHERS
+    // ========================================
 
-      }
+    teacherRows.sort((a, b) =>
+      a.teacherName.localeCompare(
+        b.teacherName
+      )
     );
 
     // ========================================
     // BUILD PERIOD WISE DATA
+    // (Same Logic as Mobile)
     // ========================================
 
     for (const row of teacherRows) {
 
       const teacherRoutine =
-        routines.filter(
-          (r) =>
-            r.teacherId ===
+        provisionalData.filter(
+          (item) =>
+            item.teacherId ===
             row.teacherId
         );
 
-      for (const routine of teacherRoutine) {
-
-        // এখানে পরে Substitute Logic
-        // যোগ হবে
+      teacherRoutine.forEach((routine) => {
 
         row.periods[
           routine.period
@@ -342,337 +404,224 @@ export const generateProvisionalRoutinePdf = async (
           subject:
             routine.subject,
 
-          originalTeacher:
-            routine.teacher?.name ||
-
-            "",
+          time:
+            routine.time,
 
           substituteTeacher:
-            "",
+            routine.substituteTeacher
+              ?.name || "-",
 
-          reason: "",
+          reason:
+            routine.reason || "",
 
         };
 
-      }
+      });
 
     }
-// ========================================
-// FIND SUBSTITUTE TEACHER
-// ========================================
 
-const teachers = await prisma.schoolTeacher.findMany();
+    // ========================================
+    // SORT PERIODS
+    // ========================================
 
-const teacherLoad = {};
+    const periodOrder = {
 
-teachers.forEach((t) => {
-  teacherLoad[t.id] = 0;
-});
+      First: 1,
 
-for (const row of teacherRows) {
+      Second: 2,
 
-  for (const period of Object.keys(row.periods)) {
+      Third: 3,
 
-    const current = row.periods[period];
+      Fourth: 4,
 
-    const originalRoutine = routines.find(
-      (r) =>
-        r.teacherId === row.teacherId &&
-        r.period === period
-    );
+      Fifth: 5,
 
-    if (!originalRoutine) continue;
+      Sixth: 6,
 
-    let substitute = null;
-    let reason = "";
+      Seventh: 7,
 
-    // ==========================
-    // Priority 1 : Main Subject
-    // ==========================
+      Eight: 8,
 
-    let candidates = teachers.filter((t) => {
+      Extra: 9,
 
-      if (t.id === row.teacherId)
-        return false;
+    };
 
-      if (
-        absentTeachers.some(
-          (a) => a.teacherId === t.id
-        )
-      )
-        return false;
+        // ========================================
+    // DRAW TABLE DATA
+    // ========================================
 
-      const busy = routines.some(
-        (r) =>
-          r.teacherId === t.id &&
-          r.period === period
-      );
+    teacherRows.forEach((row, rowIndex) => {
 
-      if (busy)
-        return false;
+      const y =
+        startY +
+        rowHeight +
+        rowIndex * rowHeight;
 
-      return (
-        (t.mainSubject || "").toLowerCase() ===
-        (current.subject || "").toLowerCase()
-      );
+      // ======================================
+      // Absent Teacher Name
+      // ======================================
+
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(9)
+        .fillColor("black")
+        .text(
+          row.teacherName,
+          startX + 3,
+          y + 16,
+          {
+            width: teacherWidth - 6,
+            align: "center",
+          }
+        );
+
+      // ======================================
+      // Period Data
+      // ======================================
+
+      periods.forEach((period, colIndex) => {
+
+        const info = row.periods[period];
+
+        if (!info) return;
+
+        const x =
+          startX +
+          teacherWidth +
+          colIndex * periodWidth;
+
+        // ===========================
+        // Class + Section
+        // ===========================
+
+        doc
+          .font("Helvetica-Bold")
+          .fontSize(8)
+          .fillColor("black")
+          .text(
+            `${info.className}-${info.section}`,
+            x + 2,
+            y + 2,
+            {
+              width: periodWidth - 4,
+              align: "center",
+            }
+          );
+
+        // ===========================
+        // Subject
+        // ===========================
+
+        doc
+          .font("Helvetica")
+          .fontSize(7)
+          .text(
+            info.subject,
+            x + 2,
+            y + 13,
+            {
+              width: periodWidth - 4,
+              align: "center",
+            }
+          );
+
+        // ===========================
+        // Substitute Teacher
+        // ===========================
+
+        doc
+          .font("Helvetica-Bold")
+          .fontSize(7)
+          .fillColor("#006400")
+          .text(
+            info.substituteTeacher,
+            x + 2,
+            y + 24,
+            {
+              width: periodWidth - 4,
+              align: "center",
+            }
+          );
+
+        // ===========================
+        // Reason
+        // ===========================
+
+        doc
+          .font("Helvetica")
+          .fontSize(6)
+          .fillColor("#555555")
+          .text(
+            info.reason,
+            x + 2,
+            y + 35,
+            {
+              width: periodWidth - 4,
+              align: "center",
+            }
+          );
+
+        doc.fillColor("black");
+
+      });
 
     });
 
-    if (candidates.length > 0) {
+        // ========================================
+    // FOOTER
+    // ========================================
 
-      candidates.sort(
-        (a, b) =>
-          teacherLoad[a.id] -
-          teacherLoad[b.id]
+    doc.moveTo(
+      20,
+      doc.page.height - 45
+    )
+    .lineTo(
+      doc.page.width - 20,
+      doc.page.height - 45
+    )
+    .stroke();
+
+    doc
+      .font("Helvetica")
+      .fontSize(9)
+      .fillColor("#555555")
+      .text(
+        "Generated by Bhangar High School Routine Management System",
+        20,
+        doc.page.height - 35,
+        {
+          align: "center",
+        }
       );
 
-      substitute = candidates[0];
-      reason = "Main Subject";
+    // ========================================
+    // END PDF
+    // ========================================
 
-    }
+    doc.end();
 
-    // ==========================
-    // Priority 2 : Optional Subject
-    // ==========================
+  } catch (err) {
 
-    if (!substitute) {
+    console.error(
+      "Generate Provisional PDF Error:",
+      err
+    );
 
-      candidates = teachers.filter((t) => {
+    if (!res.headersSent) {
 
-        if (t.id === row.teacherId)
-          return false;
+      res.status(500).json({
 
-        if (
-          absentTeachers.some(
-            (a) => a.teacherId === t.id
-          )
-        )
-          return false;
+        success: false,
 
-        const busy = routines.some(
-          (r) =>
-            r.teacherId === t.id &&
-            r.period === period
-        );
+        message:
+          "Failed to generate provisional routine PDF.",
 
-        if (busy)
-          return false;
-
-        return (
-          t.optionalSubjects || []
-        ).some(
-          (s) =>
-            (s || "").toLowerCase() ===
-            (current.subject || "").toLowerCase()
-        );
+        error: err.message,
 
       });
-
-      if (candidates.length > 0) {
-
-        candidates.sort(
-          (a, b) =>
-            teacherLoad[a.id] -
-            teacherLoad[b.id]
-        );
-
-        substitute = candidates[0];
-        reason = "Optional Subject";
-
-      }
-
-    }
-
-    // ==========================
-    // Priority 3 : Any Free Teacher
-    // ==========================
-
-    if (!substitute) {
-
-      candidates = teachers.filter((t) => {
-
-        if (t.id === row.teacherId)
-          return false;
-
-        if (
-          absentTeachers.some(
-            (a) => a.teacherId === t.id
-          )
-        )
-          return false;
-
-        const busy = routines.some(
-          (r) =>
-            r.teacherId === t.id &&
-            r.period === period
-        );
-
-        return !busy;
-
-      });
-
-      if (candidates.length > 0) {
-
-        candidates.sort(
-          (a, b) =>
-            teacherLoad[a.id] -
-            teacherLoad[b.id]
-        );
-
-        substitute = candidates[0];
-        reason = "Free Teacher";
-
-      }
-
-    }
-
-    if (substitute) {
-
-      teacherLoad[substitute.id]++;
-
-      current.substituteTeacher =
-        substitute.name;
-
-      current.reason = reason;
-
-    } else {
-
-      current.substituteTeacher =
-        "Not Available";
-
-      current.reason =
-        "No Substitute";
 
     }
 
   }
-
-}
-// ========================================
-// PART 5
-// DRAW TABLE DATA
-// ========================================
-
-teacherRows.forEach((row, rowIndex) => {
-
-  const y =
-    startY +
-    rowHeight +
-    rowIndex * rowHeight;
-
-  // ==========================
-  // Absent Teacher Name
-  // ==========================
-
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(10)
-    .text(
-      row.teacherName,
-      startX + 3,
-      y + 16,
-      {
-        width: teacherWidth - 6,
-        align: "center",
-      }
-    );
-
-  // ==========================
-  // Period Columns
-  // ==========================
-
-  periods.forEach((period, colIndex) => {
-
-    const x =
-      startX +
-      teacherWidth +
-      colIndex * periodWidth;
-
-    const info = row.periods[period];
-
-    if (!info) return;
-
-    // Class + Section
-
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(8)
-      .text(
-        `${info.className}-${info.section}`,
-        x + 2,
-        y + 2,
-        {
-          width: periodWidth - 4,
-          align: "center",
-        }
-      );
-
-    // Subject
-
-    doc
-      .font("Helvetica")
-      .fontSize(8)
-      .text(
-        info.subject,
-        x + 2,
-        y + 14,
-        {
-          width: periodWidth - 4,
-          align: "center",
-        }
-      );
-
-    // Substitute Teacher
-
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(7)
-      .text(
-        info.substituteTeacher,
-        x + 2,
-        y + 26,
-        {
-          width: periodWidth - 4,
-          align: "center",
-        }
-      );
-
-    // Reason
-
-    doc
-      .font("Helvetica")
-      .fontSize(6)
-      .fillColor("#666666")
-      .text(
-        info.reason,
-        x + 2,
-        y + 38,
-        {
-          width: periodWidth - 4,
-          align: "center",
-        }
-      )
-      .fillColor("black");
-
-  });
-
-});
-
-// ========================================
-// END PDF
-// ========================================
-
-doc.end();
-
-} catch (err) {
-
-  console.log(err);
-
-  res.status(500).json({
-    success: false,
-    message: err.message,
-  });
-
-}
 
 };
