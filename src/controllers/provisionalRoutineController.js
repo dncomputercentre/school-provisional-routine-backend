@@ -63,13 +63,13 @@ export const getProvisionalRoutineByDay = async (req, res) => {
 
     const teachers =
       await prisma.schoolTeacher.findMany();
-    console.log(
-      teachers.map((t) => ({
-        name: t.name,
-        mainSubject: t.mainSubject,
-        optionalSubjects: t.optionalSubjects,
-      }))
-    );
+    // console.log(
+//   teachers.map((t) => ({
+//     name: t.name,
+//     mainSubject: t.mainSubject,
+//     optionalSubjects: t.optionalSubjects,
+//   }))
+// );
 
     const absentIds = absentTeachers.map(
       (a) => a.teacherId

@@ -12,7 +12,6 @@ import provisionalRoutineRoutes from "./routes/provisionalRoutineRoutes.js";
 import teacherWisePdfRoutes from "./routes/teacherWisePdfRoutes.js";
 import teacherNormalRoutineRoutes from "./routes/teacherNormalRoutineRoutes.js";
 import routinePdfRoutes from "./routes/routinePdfRoutes.js";
-import provisionalRoutinePdfRoutes from "./routes/provisionalRoutinePdfRoutes.js";
 
 dotenv.config();
 
