@@ -31,7 +31,6 @@ app.use("/api/provisional-routine", provisionalRoutineRoutes);
 app.use("/api/teacher-pdf", teacherWisePdfRoutes);
 app.use("/api/teacher-normal-routine", teacherNormalRoutineRoutes);
 app.use("/api/class-routine/pdf", routinePdfRoutes);
-app.use("/api/provisional-routine/pdf", provisionalRoutinePdfRoutes);
 
 // TEST ROUTE
 app.get("/", (req, res) => {
