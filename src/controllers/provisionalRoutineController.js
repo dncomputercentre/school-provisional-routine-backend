@@ -55,7 +55,8 @@ export const getProvisionalRoutineByDay = async (req, res) => {
           time: "asc",
         },
       });
-
+    console.log("DAY =", day);
+    console.log("ROUTINES =", routines.length);
     // ===========================
     // Load Absent Teacher
     // ===========================
@@ -81,7 +82,7 @@ export const getProvisionalRoutineByDay = async (req, res) => {
       absentTeachers.map(
         (a) => a.teacherId
       );
-
+console.log("ABSENT IDS =", absentIds.length);
     // ===========================
     // Build Provisional Routine
     // ===========================
@@ -92,7 +93,7 @@ export const getProvisionalRoutineByDay = async (req, res) => {
         teachers,
         absentIds
       );
-
+console.log("RESULT =", result.length);
     // ===========================
     // Response
     // ===========================
