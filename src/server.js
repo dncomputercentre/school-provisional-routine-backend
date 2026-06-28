@@ -12,7 +12,7 @@ import provisionalRoutineRoutes from "./routes/provisionalRoutineRoutes.js";
 import teacherWisePdfRoutes from "./routes/teacherWisePdfRoutes.js";
 import teacherNormalRoutineRoutes from "./routes/teacherNormalRoutineRoutes.js";
 import routinePdfRoutes from "./routes/routinePdfRoutes.js";
-
+import absentReportRoutes from "./routes/absentReportRoutes.js";
 dotenv.config();
 
 const app = express();
@@ -30,6 +30,7 @@ app.use("/api/provisional-routine", provisionalRoutineRoutes);
 app.use("/api/teacher-pdf", teacherWisePdfRoutes);
 app.use("/api/teacher-normal-routine", teacherNormalRoutineRoutes);
 app.use("/api/class-routine/pdf", routinePdfRoutes);
+app.use("/api/absent-report",absentReportRoutes);
 
 // TEST ROUTE
 app.get("/", (req, res) => {
