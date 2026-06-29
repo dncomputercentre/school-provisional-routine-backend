@@ -162,53 +162,47 @@ export const generateProvisionalRoutinePdf = async (
 
     doc.pipe(res);
 
-        // ========================================
+    // ========================================
     // HEADER
     // ========================================
 
     doc
       .font("Helvetica-Bold")
-      .fontSize(22)
-      .text(
-        "Bhangar High School (H.S)",
-        {
-          align: "center",
-        }
-      );
+      .fontSize(24)
+      .fillColor("#1E3A8A")
+      .text("Bhangar High School (H.S)", {
+        align: "center",
+      });
 
     doc
-      .moveDown(0.2)
-      .font("Helvetica")
-      .fontSize(12)
-      .text(
-        "Bhangar, South 24 Parganas",
-        {
-          align: "center",
-        }
-      );
+      .font("Helvetica-Bold")
+      .fontSize(13)
+      .fillColor("black")
+      .text("Bhangar, South 24 Parganas", {
+        align: "center",
+      });
 
+    // Blue Line
+    doc
+      .moveTo(20, 58)
+      .lineTo(doc.page.width - 20, 58)
+      .lineWidth(1)
+      .strokeColor("#1E3A8A")
+      .stroke();
     doc.moveDown(0.3);
 
     doc
       .font("Helvetica-Bold")
       .fontSize(11);
 
-    doc.text(
-      `Date : ${date}`,
-      280,
-      60
-    );
+    doc.text(`Date : ${date}`, 420, 75);
 
-    doc.text(
-      `Day : ${day}`,
-      450,
-      60
-    );
+    doc.text(`Day : ${day}`, 560, 75);
 
     doc.text(
       `Absent Teacher : ${absentTeachers.length}`,
-      610,
-      60
+      690,
+      75
     );
 
     // ========================================
@@ -216,27 +210,65 @@ export const generateProvisionalRoutinePdf = async (
     // ========================================
 
     const startX = 20;
-    const startY = 90;
+    const startY = 115;
 
-    const teacherWidth = 120;
-    const periodWidth = 78;
+    const teacherWidth = 130;
+    const periodWidth = 84;
     const rowHeight = 48;
 
     const periods = [
-      "First",
-      "Second",
-      "Third",
-      "Fourth",
-      "Fifth",
-      "Sixth",
-      "Seventh",
-      "Eight",
-      "Extra",
+      {
+        name: "First",
+        time: "10:50-11:30",
+      },
+      {
+        name: "Second",
+        time: "11:30-12:10",
+      },
+      {
+        name: "Third",
+        time: "12:10-12:50",
+      },
+      {
+        name: "Fourth",
+        time: "12:50-1:30",
+      },
+      {
+        name: "Fifth",
+        time: "2:10-2:45",
+      },
+      {
+        name: "Sixth",
+        time: "2:45-3:20",
+      },
+      {
+        name: "Seventh",
+        time: "3:20-3:55",
+      },
+      {
+        name: "Eight",
+        time: "3:55-4:30",
+      },
     ];
 
     // ========================================
     // HEADER CELL
     // ========================================
+    // HEADER BACKGROUND
+
+    doc
+      .save()
+      .fillColor("#F3F7FD")   // খুব হালকা Blue (Black & White print-এও সুন্দর দেখাবে)
+      .rect(
+        startX,
+        startY,
+        teacherWidth,
+        rowHeight
+      )
+      .fill()
+      .restore();
+
+    // BORDER
 
     doc
       .rect(
@@ -270,7 +302,17 @@ export const generateProvisionalRoutinePdf = async (
         startX +
         teacherWidth +
         index * periodWidth;
-
+      doc
+        .save()
+        .fillColor("#F3F7FD")
+        .rect(
+          x,
+          startY,
+          periodWidth,
+          rowHeight
+        )
+        .fill()
+        .restore();
       doc
         .rect(
           x,
@@ -299,11 +341,7 @@ export const generateProvisionalRoutinePdf = async (
     // GRID DRAW
     // ========================================
 
-    const totalRows =
-      Math.max(
-        absentTeachers.length,
-        15
-      );
+    const totalRows = Math.max(absentTeachers.length + 2, 15);
 
     for (
       let row = 0;
@@ -348,7 +386,7 @@ export const generateProvisionalRoutinePdf = async (
       });
 
     }
-        // ========================================
+    // ========================================
     // GROUP ABSENT TEACHERS
     // ========================================
 
@@ -442,11 +480,9 @@ export const generateProvisionalRoutinePdf = async (
 
       Eight: 8,
 
-      Extra: 9,
-
     };
 
-        // ========================================
+    // ========================================
     // DRAW TABLE DATA
     // ========================================
 
@@ -567,33 +603,38 @@ export const generateProvisionalRoutinePdf = async (
 
     });
 
-        // ========================================
-    // FOOTER
-    // ========================================
+    const signY =
+      doc.page.height - 65;
 
-    doc.moveTo(
-      20,
-      doc.page.height - 45
-    )
-    .lineTo(
-      doc.page.width - 20,
-      doc.page.height - 45
-    )
-    .stroke();
+    // Generated Time
+    doc
+      .font("Helvetica-Oblique")
+      .fontSize(9)
+
+      .text(
+        `Generated On : ${new Date().toLocaleString()}`,
+        25,
+        signY + 25
+      );
+
+    // Signature Line
+    doc
+      .moveTo(650, signY)
+      .lineTo(790, signY)
+      .stroke();
 
     doc
-      .font("Helvetica")
-      .fontSize(9)
-      .fillColor("#555555")
+      .font("Helvetica-Bold")
+      .fontSize(11)
       .text(
-        "Generated by Bhangar High School Routine Management System",
-        20,
-        doc.page.height - 35,
+        "H.M Signature & Seal",
+        650,
+        signY + 8,
         {
+          width: 140,
           align: "center",
         }
       );
-
     // ========================================
     // END PDF
     // ========================================
