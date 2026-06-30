@@ -324,345 +324,355 @@ export const generateProvisionalRoutinePdf = async (
 
       doc
         .font("Helvetica-Bold")
-        .fontSize(10)
+        .fontSize(8)
         .text(
-          `${period}`,
+          period.name,
           x,
-          startY + 15,
+          startY + 6,
           {
             width: periodWidth,
             align: "center",
           }
         );
 
-    });
-
-    // ========================================
-    // GRID DRAW
-    // ========================================
-
-    const totalRows = Math.max(absentTeachers.length + 2, 15);
-
-    for (
-      let row = 0;
-      row < totalRows;
-      row++
-    ) {
-
-      const y =
-        startY +
-        rowHeight +
-        row * rowHeight;
-
-      // Teacher Column
-
       doc
-        .rect(
-          startX,
-          y,
-          teacherWidth,
-          rowHeight
-        )
-        .stroke();
+        .font("Helvetica")
+        .fontSize(6)
+        .text(
+          `(${period.time})`,
+          x,
+          startY + 18,
+          {
+            width: periodWidth,
+            align: "center",
+          }
+        );
+      // ========================================
+      // GRID DRAW
+      // ========================================
 
-      // Period Columns
+      const totalRows = Math.max(absentTeachers.length + 2, 15);
 
-      periods.forEach((_, col) => {
+      for (
+        let row = 0;
+        row < totalRows;
+        row++
+      ) {
 
-        const x =
-          startX +
-          teacherWidth +
-          col * periodWidth;
+        const y =
+          startY +
+          rowHeight +
+          row * rowHeight;
+
+        // Teacher Column
 
         doc
           .rect(
-            x,
+            startX,
             y,
-            periodWidth,
+            teacherWidth,
             rowHeight
           )
           .stroke();
 
+        // Period Columns
+
+        periods.forEach((_, col) => {
+
+          const x =
+            startX +
+            teacherWidth +
+            col * periodWidth;
+
+          doc
+            .rect(
+              x,
+              y,
+              periodWidth,
+              rowHeight
+            )
+            .stroke();
+
+        });
+
+      }
+      // ========================================
+      // GROUP ABSENT TEACHERS
+      // ========================================
+
+      const teacherRows = absentTeachers.map(
+        (absent) => ({
+
+          teacherId: absent.teacherId,
+
+          teacherName:
+            absent.teacher?.name || "",
+
+          periods: {},
+
+        })
+      );
+
+      // ========================================
+      // SORT TEACHERS
+      // ========================================
+
+      teacherRows.sort((a, b) =>
+        a.teacherName.localeCompare(
+          b.teacherName
+        )
+      );
+
+      // ========================================
+      // BUILD PERIOD WISE DATA
+      // (Same Logic as Mobile)
+      // ========================================
+
+      for (const row of teacherRows) {
+
+        const teacherRoutine =
+          provisionalData.filter(
+            (item) =>
+              item.teacherId ===
+              row.teacherId
+          );
+
+        teacherRoutine.forEach((routine) => {
+
+          row.periods[
+            routine.period
+          ] = {
+
+            className:
+              routine.className,
+
+            section:
+              routine.section,
+
+            subject:
+              routine.subject,
+
+            time:
+              routine.time,
+
+            substituteTeacher:
+              routine.substituteTeacher
+                ?.name || "-",
+
+            reason:
+              routine.reason || "",
+
+          };
+
+        });
+
+      }
+
+      // ========================================
+      // SORT PERIODS
+      // ========================================
+
+      const periodOrder = {
+
+        First: 1,
+
+        Second: 2,
+
+        Third: 3,
+
+        Fourth: 4,
+
+        Fifth: 5,
+
+        Sixth: 6,
+
+        Seventh: 7,
+
+        Eight: 8,
+
+      };
+
+      // ========================================
+      // DRAW TABLE DATA
+      // ========================================
+
+      teacherRows.forEach((row, rowIndex) => {
+
+        const y =
+          startY +
+          rowHeight +
+          rowIndex * rowHeight;
+
+        // ======================================
+        // Absent Teacher Name
+        // ======================================
+
+        doc
+          .font("Helvetica-Bold")
+          .fontSize(9)
+          .fillColor("black")
+          .text(
+            row.teacherName,
+            startX + 3,
+            y + 16,
+            {
+              width: teacherWidth - 6,
+              align: "center",
+            }
+          );
+
+        // ======================================
+        // Period Data
+        // ======================================
+
+        periods.forEach((period, colIndex) => {
+
+          const info = row.periods[period.name];
+
+          if (!info) return;
+
+          const x =
+            startX +
+            teacherWidth +
+            colIndex * periodWidth;
+
+          // ===========================
+          // Class + Section
+          // ===========================
+
+          doc
+            .font("Helvetica-Bold")
+            .fontSize(8)
+            .fillColor("black")
+            .text(
+              `${info.className}-${info.section}`,
+              x + 2,
+              y + 2,
+              {
+                width: periodWidth - 4,
+                align: "center",
+              }
+            );
+
+          // ===========================
+          // Subject
+          // ===========================
+
+          doc
+            .font("Helvetica")
+            .fontSize(7)
+            .text(
+              info.subject,
+              x + 2,
+              y + 13,
+              {
+                width: periodWidth - 4,
+                align: "center",
+              }
+            );
+
+          // ===========================
+          // Substitute Teacher
+          // ===========================
+
+          doc
+            .font("Helvetica-Bold")
+            .fontSize(7)
+            .fillColor("#006400")
+            .text(
+              info.substituteTeacher,
+              x + 2,
+              y + 24,
+              {
+                width: periodWidth - 4,
+                align: "center",
+              }
+            );
+
+          // ===========================
+          // Reason
+          // ===========================
+
+          doc
+            .font("Helvetica")
+            .fontSize(6)
+            .fillColor("#555555")
+            .text(
+              info.reason,
+              x + 2,
+              y + 35,
+              {
+                width: periodWidth - 4,
+                align: "center",
+              }
+            );
+
+          doc.fillColor("black");
+
+        });
+
       });
 
-    }
-    // ========================================
-    // GROUP ABSENT TEACHERS
-    // ========================================
+      const signY =
+        doc.page.height - 65;
 
-    const teacherRows = absentTeachers.map(
-      (absent) => ({
+      // Generated Time
+      doc
+        .font("Helvetica-Oblique")
+        .fontSize(9)
 
-        teacherId: absent.teacherId,
-
-        teacherName:
-          absent.teacher?.name || "",
-
-        periods: {},
-
-      })
-    );
-
-    // ========================================
-    // SORT TEACHERS
-    // ========================================
-
-    teacherRows.sort((a, b) =>
-      a.teacherName.localeCompare(
-        b.teacherName
-      )
-    );
-
-    // ========================================
-    // BUILD PERIOD WISE DATA
-    // (Same Logic as Mobile)
-    // ========================================
-
-    for (const row of teacherRows) {
-
-      const teacherRoutine =
-        provisionalData.filter(
-          (item) =>
-            item.teacherId ===
-            row.teacherId
+        .text(
+          `Generated On : ${new Date().toLocaleString()}`,
+          25,
+          signY + 25
         );
 
-      teacherRoutine.forEach((routine) => {
-
-        row.periods[
-          routine.period
-        ] = {
-
-          className:
-            routine.className,
-
-          section:
-            routine.section,
-
-          subject:
-            routine.subject,
-
-          time:
-            routine.time,
-
-          substituteTeacher:
-            routine.substituteTeacher
-              ?.name || "-",
-
-          reason:
-            routine.reason || "",
-
-        };
-
-      });
-
-    }
-
-    // ========================================
-    // SORT PERIODS
-    // ========================================
-
-    const periodOrder = {
-
-      First: 1,
-
-      Second: 2,
-
-      Third: 3,
-
-      Fourth: 4,
-
-      Fifth: 5,
-
-      Sixth: 6,
-
-      Seventh: 7,
-
-      Eight: 8,
-
-    };
-
-    // ========================================
-    // DRAW TABLE DATA
-    // ========================================
-
-    teacherRows.forEach((row, rowIndex) => {
-
-      const y =
-        startY +
-        rowHeight +
-        rowIndex * rowHeight;
-
-      // ======================================
-      // Absent Teacher Name
-      // ======================================
+      // Signature Line
+      doc
+        .moveTo(650, signY)
+        .lineTo(790, signY)
+        .stroke();
 
       doc
         .font("Helvetica-Bold")
-        .fontSize(9)
-        .fillColor("black")
+        .fontSize(11)
         .text(
-          row.teacherName,
-          startX + 3,
-          y + 16,
+          "H.M Signature & Seal",
+          650,
+          signY + 8,
           {
-            width: teacherWidth - 6,
+            width: 140,
             align: "center",
           }
         );
+      // ========================================
+      // END PDF
+      // ========================================
 
-      // ======================================
-      // Period Data
-      // ======================================
+      doc.end();
 
-      periods.forEach((period, colIndex) => {
+    } catch (err) {
 
-        const info = row.periods[period];
-
-        if (!info) return;
-
-        const x =
-          startX +
-          teacherWidth +
-          colIndex * periodWidth;
-
-        // ===========================
-        // Class + Section
-        // ===========================
-
-        doc
-          .font("Helvetica-Bold")
-          .fontSize(8)
-          .fillColor("black")
-          .text(
-            `${info.className}-${info.section}`,
-            x + 2,
-            y + 2,
-            {
-              width: periodWidth - 4,
-              align: "center",
-            }
-          );
-
-        // ===========================
-        // Subject
-        // ===========================
-
-        doc
-          .font("Helvetica")
-          .fontSize(7)
-          .text(
-            info.subject,
-            x + 2,
-            y + 13,
-            {
-              width: periodWidth - 4,
-              align: "center",
-            }
-          );
-
-        // ===========================
-        // Substitute Teacher
-        // ===========================
-
-        doc
-          .font("Helvetica-Bold")
-          .fontSize(7)
-          .fillColor("#006400")
-          .text(
-            info.substituteTeacher,
-            x + 2,
-            y + 24,
-            {
-              width: periodWidth - 4,
-              align: "center",
-            }
-          );
-
-        // ===========================
-        // Reason
-        // ===========================
-
-        doc
-          .font("Helvetica")
-          .fontSize(6)
-          .fillColor("#555555")
-          .text(
-            info.reason,
-            x + 2,
-            y + 35,
-            {
-              width: periodWidth - 4,
-              align: "center",
-            }
-          );
-
-        doc.fillColor("black");
-
-      });
-
-    });
-
-    const signY =
-      doc.page.height - 65;
-
-    // Generated Time
-    doc
-      .font("Helvetica-Oblique")
-      .fontSize(9)
-
-      .text(
-        `Generated On : ${new Date().toLocaleString()}`,
-        25,
-        signY + 25
+      console.error(
+        "Generate Provisional PDF Error:",
+        err
       );
 
-    // Signature Line
-    doc
-      .moveTo(650, signY)
-      .lineTo(790, signY)
-      .stroke();
+      if (!res.headersSent) {
 
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(11)
-      .text(
-        "H.M Signature & Seal",
-        650,
-        signY + 8,
-        {
-          width: 140,
-          align: "center",
-        }
-      );
-    // ========================================
-    // END PDF
-    // ========================================
+        res.status(500).json({
 
-    doc.end();
+          success: false,
 
-  } catch (err) {
+          message:
+            "Failed to generate provisional routine PDF.",
 
-    console.error(
-      "Generate Provisional PDF Error:",
-      err
-    );
+          error: err.message,
 
-    if (!res.headersSent) {
+        });
 
-      res.status(500).json({
-
-        success: false,
-
-        message:
-          "Failed to generate provisional routine PDF.",
-
-        error: err.message,
-
-      });
+      }
 
     }
 
-  }
-
-};
+  };
