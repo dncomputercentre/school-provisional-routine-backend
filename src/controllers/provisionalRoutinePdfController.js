@@ -347,6 +347,7 @@ export const generateProvisionalRoutinePdf = async (
             align: "center",
           }
         );
+        });
       // ========================================
       // GRID DRAW
       // ========================================
