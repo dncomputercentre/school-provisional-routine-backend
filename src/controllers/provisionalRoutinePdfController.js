@@ -366,7 +366,9 @@ function drawTeacherRow(
         y + 40,
         {
           width: periodWidth - 4,
+          height: 8,
           align: "center",
+          lineBreak: false,
         }
       );
 
@@ -608,7 +610,7 @@ export const generateProvisionalRoutinePdf = async (
 
     const teacherWidth = 145;
     const periodWidth = 82;
-    const rowHeight = 48;
+    const rowHeight = 60;
 
     const periods = [
       {
