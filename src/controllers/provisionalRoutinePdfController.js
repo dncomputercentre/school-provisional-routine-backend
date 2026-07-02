@@ -4,435 +4,31 @@ import {
   buildProvisionalRoutine,
 } from "../utils/provisionalRoutineLogic.js";
 
-// ========================================
-// SCHOOL HEADER
-// ========================================
-
-function drawSchoolHeader(
-  doc,
-  date,
-  day,
-  absentCount
-) {
-
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(24)
-    .fillColor("#1E3A8A")
-    .text(
-      "Bhangar High School (H.S)",
-      {
-        align: "center",
-      }
-    );
-
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(13)
-    .fillColor("black")
-    .text(
-      "Bhangar, South 24 Parganas",
-      {
-        align: "center",
-      }
-    );
-
-  doc
-    .moveTo(20, 58)
-    .lineTo(
-      doc.page.width - 20,
-      58
-    )
-    .lineWidth(1)
-    .strokeColor("#1E3A8A")
-    .stroke();
-
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(11)
-    .fillColor("black");
-
-  doc.text(
-    `Date : ${date}`,
-    430,
-    82
-  );
-
-  doc.text(
-    `Day : ${day}`,
-    560,
-    82
-  );
-
-  doc.text(
-    `Absent Teacher : ${absentCount}`,
-    675,
-    82
-  );
-
-}
-
-// ========================================
-// TABLE HEADER
-// ========================================
-
-function drawTableHeader(
-  doc,
-  startX,
-  startY,
-  teacherWidth,
-  periodWidth,
-  rowHeight,
-  periods
-) {
-
-  // ===========================
-  // Teacher Header
-  // ===========================
-
-  doc
-    .save()
-    .fillColor("#DCEAFB")
-    .rect(
-      startX,
-      startY,
-      teacherWidth,
-      rowHeight
-    )
-    .fill()
-    .restore();
-
-  doc
-    .rect(
-      startX,
-      startY,
-      teacherWidth,
-      rowHeight
-    )
-    .stroke();
-
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(11)
-    .fillColor("black")
-    .text(
-      "Absent Teacher",
-      startX,
-      startY + 15,
-      {
-        width: teacherWidth,
-        align: "center",
-      }
-    );
-
-  // ===========================
-  // Period Headers
-  // ===========================
-
-  periods.forEach((period, index) => {
-
-    const x =
-      startX +
-      teacherWidth +
-      index * periodWidth;
-
-    doc
-      .save()
-      .fillColor("#DCEAFB")
-      .rect(
-        x,
-        startY,
-        periodWidth,
-        rowHeight
-      )
-      .fill()
-      .restore();
-
-    doc
-      .rect(
-        x,
-        startY,
-        periodWidth,
-        rowHeight
-      )
-      .stroke();
-
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(8)
-      .fillColor("black")
-      .text(
-        period.name,
-        x,
-        startY + 6,
-        {
-          width: periodWidth,
-          align: "center",
-        }
-      );
-
-    doc
-      .font("Helvetica")
-      .fontSize(6)
-      .text(
-        `(${period.time})`,
-        x,
-        startY + 18,
-        {
-          width: periodWidth,
-          align: "center",
-        }
-      );
-
-  });
-
-}
-
-// ========================================
-// DRAW TABLE GRID
-// ========================================
-
-function drawGrid(
-  doc,
+import {
   startX,
   startY,
   teacherWidth,
   periodWidth,
   rowHeight,
   totalRows,
-  periods
-) {
+  MAX_ROWS_PER_PAGE,
+  periods,
+} from "../utils/pdf/pdfConstants.js";
 
-  for (let row = 0; row < totalRows; row++) {
+import {
+  drawSchoolHeader,
+  drawFooter,
+} from "../utils/pdf/pdfHelpers.js";
 
-    const y =
-      startY +
-      rowHeight +
-      row * rowHeight;
+import {
+  drawTableHeader,
+  drawGrid,
+} from "../utils/pdf/pdfTable.js";
 
-    // ===========================
-    // Teacher Column
-    // ===========================
+import {
+  drawTeacherRow,
+} from "../utils/pdf/pdfRows.js";
 
-    doc
-      .rect(
-        startX,
-        y,
-        teacherWidth,
-        rowHeight
-      )
-      .stroke();
-
-    // ===========================
-    // Period Columns
-    // ===========================
-
-    periods.forEach((_, col) => {
-
-      const x =
-        startX +
-        teacherWidth +
-        col * periodWidth;
-
-      doc
-        .rect(
-          x,
-          y,
-          periodWidth,
-          rowHeight
-        )
-        .stroke();
-
-    });
-
-  }
-
-}
-
-// ========================================
-// DRAW ONE TEACHER ROW
-// ========================================
-
-function drawTeacherRow(
-  doc,
-  row,
-  y,
-  startX,
-  teacherWidth,
-  periodWidth,
-  periods
-) {
-
-  // ===========================
-  // Teacher Name
-  // ===========================
-
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(9)
-    .fillColor("black")
-    .text(
-      row.teacherName,
-      startX + 3,
-      y + 18,
-      {
-        width: teacherWidth - 6,
-        align: "center",
-      }
-    );
-
-  // ===========================
-  // Period Data
-  // ===========================
-
-  periods.forEach((period, colIndex) => {
-
-    const info =
-      row.periods[period.name];
-
-    if (!info)
-      return;
-
-    const x =
-      startX +
-      teacherWidth +
-      colIndex * periodWidth;
-
-    // ===========================
-    // Class + Section
-    // ===========================
-
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(8)
-      .fillColor("black")
-      .text(
-        `${info.className}-${info.section}`,
-        x + 2,
-        y + 4,
-        {
-          width: periodWidth - 4,
-          align: "center",
-        }
-      );
-
-    // ===========================
-    // Subject
-    // ===========================
-
-    doc
-      .font("Helvetica")
-      .fontSize(7)
-      .fillColor("black")
-      .text(
-        info.subject,
-        x + 2,
-        y + 16,
-        {
-          width: periodWidth - 4,
-          align: "center",
-        }
-      );
-
-    // ===========================
-    // Substitute Teacher
-    // ===========================
-
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(7)
-      .fillColor("#008000")
-      .text(
-        info.substituteTeacher,
-        x + 2,
-        y + 28,
-        {
-          width: periodWidth - 4,
-          align: "center",
-        }
-      );
-
-    // ===========================
-    // Reason
-    // ===========================
-
-    doc
-      .font("Helvetica")
-      .fontSize(6)
-      .fillColor("#555555")
-      .text(
-        info.reason,
-        x + 2,
-        y + 40,
-        {
-          width: periodWidth - 4,
-          height: 8,
-          align: "center",
-          lineBreak: false,
-        }
-      );
-
-    // আবার Black Color
-
-    doc.fillColor("black");
-
-  });
-
-}
-
-// ========================================
-// DRAW FOOTER
-// ========================================
-
-function drawFooter(
-  doc,
-  signY
-) {
-
-  // ===========================
-  // Generated Time
-  // ===========================
-
-  doc
-    .font("Helvetica-Oblique")
-    .fontSize(9)
-    .fillColor("black")
-    .text(
-      `Generated On : ${new Date().toLocaleString()}`,
-      25,
-      signY + 25
-    );
-
-  // ===========================
-  // Signature Line
-  // ===========================
-
-  doc
-    .moveTo(650, signY)
-    .lineTo(790, signY)
-    .lineWidth(1)
-    .strokeColor("black")
-    .stroke();
-
-  // ===========================
-  // Signature Text
-  // ===========================
-
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(11)
-    .fillColor("black")
-    .text(
-      "H.M Signature & Seal",
-      650,
-      signY + 8,
-      {
-        width: 140,
-        align: "center",
-      }
-    );
-
-}
 
 
 export const generateProvisionalRoutinePdf = async (
@@ -602,52 +198,6 @@ export const generateProvisionalRoutinePdf = async (
 
 
     // ========================================
-    // TABLE SETTINGS
-    // ========================================
-
-    const startX = 20;
-    const startY = 115;
-
-    const teacherWidth = 145;
-    const periodWidth = 82;
-    const rowHeight = 60;
-
-    const periods = [
-      {
-        name: "First",
-        time: "10:50-11:30",
-      },
-      {
-        name: "Second",
-        time: "11:30-12:10",
-      },
-      {
-        name: "Third",
-        time: "12:10-12:50",
-      },
-      {
-        name: "Fourth",
-        time: "12:50-1:30",
-      },
-      {
-        name: "Fifth",
-        time: "2:10-2:45",
-      },
-      {
-        name: "Sixth",
-        time: "2:45-3:20",
-      },
-      {
-        name: "Seventh",
-        time: "3:20-3:55",
-      },
-      {
-        name: "Eight",
-        time: "3:55-4:30",
-      },
-    ];
-
-    // ========================================
     // DRAW TABLE HEADER
     // ========================================
 
@@ -664,7 +214,7 @@ export const generateProvisionalRoutinePdf = async (
     // DRAW GRID
     // ========================================
 
-    const totalRows = 14;
+
 
     drawGrid(
       doc,
@@ -718,6 +268,9 @@ export const generateProvisionalRoutinePdf = async (
         );
 
       teacherRoutine.forEach((routine) => {
+
+        console.log(routine);
+
         row.periods[
           routine.period
         ] = {
@@ -753,7 +306,7 @@ export const generateProvisionalRoutinePdf = async (
     // DRAW TABLE DATA
     // ========================================
 
-    const MAX_ROWS_PER_PAGE = 10;
+
 
     let currentIndex = 0;
 
