@@ -375,9 +375,8 @@ export const generateProvisionalRoutinePdf = async (
       const signY =
         startY +
         rowHeight +
-        totalRows * rowHeight +
-        35;
-
+        totalRows * rowHeight -
+        10;
       drawFooter(doc, signY);
       currentIndex += MAX_ROWS_PER_PAGE;
 
