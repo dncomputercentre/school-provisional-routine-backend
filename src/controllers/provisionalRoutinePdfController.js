@@ -36,6 +36,7 @@ export const generateProvisionalRoutinePdf = async (
 ) => {
 
   try {
+
     // ========================================
     // GET DATE
     // ========================================
@@ -45,8 +46,11 @@ export const generateProvisionalRoutinePdf = async (
     if (!date) {
 
       return res.status(400).json({
+
         success: false,
+
         message: "Date is required",
+
       });
 
     }
@@ -64,13 +68,21 @@ export const generateProvisionalRoutinePdf = async (
     end.setHours(23, 59, 59, 999);
 
     const dayNames = [
+
       "Sunday",
+
       "Monday",
+
       "Tuesday",
+
       "Wednesday",
+
       "Thursday",
+
       "Friday",
+
       "Saturday",
+
     ];
 
     const day =
@@ -84,15 +96,21 @@ export const generateProvisionalRoutinePdf = async (
       await prisma.classRoutine.findMany({
 
         where: {
+
           day,
+
         },
 
         include: {
+
           teacher: true,
+
         },
 
         orderBy: {
+
           time: "asc",
+
         },
 
       });
@@ -150,15 +168,6 @@ export const generateProvisionalRoutinePdf = async (
       });
 
     // ========================================
-    // ABSENT IDS
-    // ========================================
-
-    const absentIds =
-      absentTeachers.map(
-        (teacher) => teacher.teacherId
-      );
-
-    // ========================================
     // BUILD PROVISIONAL ROUTINE
     // ========================================
 
@@ -169,11 +178,13 @@ export const generateProvisionalRoutinePdf = async (
 
         teachers,
 
-        absentIds
+        absentTeachers.map(
+          (t) => t.teacherId
+        )
 
       );
 
-          // ========================================
+    // ========================================
     // PDF SETUP
     // ========================================
 
@@ -184,10 +195,6 @@ export const generateProvisionalRoutinePdf = async (
       layout: "landscape",
 
       margin: 20,
-
-      autoFirstPage: true,
-
-      bufferPages: true,
 
     });
 
@@ -204,82 +211,22 @@ export const generateProvisionalRoutinePdf = async (
     doc.pipe(res);
 
     // ========================================
-    // FIRST PAGE
-    // ========================================
-
-    drawSchoolHeader(
-
-      doc,
-
-      date,
-
-      day,
-
-      absentTeachers.length
-
-    );
-
-    drawTableHeader(
-
-      doc,
-
-      startX,
-
-      startY,
-
-      teacherWidth,
-
-      periodWidth,
-
-      rowHeight,
-
-      periods
-
-    );
-
-    drawGrid(
-
-      doc,
-
-      startX,
-
-      startY,
-
-      teacherWidth,
-
-      periodWidth,
-
-      rowHeight,
-
-      totalRows,
-
-      periods
-
-    );
-
-        // ========================================
     // BUILD TEACHER ROWS
     // ========================================
 
-    const teacherRows = [];
+    const teacherRows = absentTeachers.map((absent) => ({
 
-    absentTeachers.forEach((absent) => {
+      teacherId: absent.teacherId,
 
-      teacherRows.push({
+      teacherName:
+        absent.teacher?.name || "-",
 
-        teacherId: absent.teacherId,
+      periods: {},
 
-        teacherName:
-          absent.teacher?.name || "-",
-
-        periods: {},
-
-      });
-
-    });
+    }));
 
     // ========================================
-    // SORT TEACHERS
+    // SORT BY NAME
     // ========================================
 
     teacherRows.sort((a, b) =>
@@ -289,179 +236,135 @@ export const generateProvisionalRoutinePdf = async (
     );
 
     // ========================================
-    // BUILD PERIOD DATA
+    // FILL PERIOD DATA
     // ========================================
 
     teacherRows.forEach((row) => {
 
-      const teacherRoutine =
-        provisionalData.filter(
-
+      provisionalData
+        .filter(
           (item) =>
+            item.teacherId === row.teacherId
+        )
+        .forEach((routine) => {
 
-            item.teacherId ===
-            row.teacherId
+          row.periods[routine.period] = {
 
-        );
+            className:
+              routine.className || "",
 
-      teacherRoutine.forEach((routine) => {
+            section:
+              routine.section || "",
 
-        row.periods[
-          routine.period
-        ] = {
+            subject:
+              routine.subject || "",
 
-          className:
-            routine.className || "",
+            substituteTeacher:
+              routine.substituteTeacher?.name || "-",
 
-          section:
-            routine.section || "",
+            reason:
+              routine.reason || "",
 
-          subject:
-            routine.subject || "",
+          };
 
-          period:
-            routine.period || "",
-
-          time:
-            routine.time || "",
-
-          substituteTeacher:
-
-            routine.substituteTeacher?.name ||
-
-            "-",
-
-          reason:
-            routine.reason || "",
-
-        };
-
-      });
+        });
 
     });
-
-    // ========================================
-    // TOTAL TEACHERS
-    // ========================================
 
     const totalTeachers =
       teacherRows.length;
 
-          // ========================================
-    // DRAW TABLE DATA
+    // ========================================
+    // DRAW PAGE BY PAGE
     // ========================================
 
     let currentIndex = 0;
 
     while (currentIndex < totalTeachers) {
 
-      // ------------------------------------
-      // New Page (First Page ছাড়া)
-      // ------------------------------------
+      // ----------------------------------------
+      // New Page (First Page ছাড়া)
+      // ----------------------------------------
 
       if (currentIndex > 0) {
-
         doc.addPage();
-
-        drawSchoolHeader(
-          doc,
-          date,
-          day,
-          absentTeachers.length
-        );
-
-        drawTableHeader(
-          doc,
-          startX,
-          startY,
-          teacherWidth,
-          periodWidth,
-          rowHeight,
-          periods
-        );
-
-        drawGrid(
-          doc,
-          startX,
-          startY,
-          teacherWidth,
-          periodWidth,
-          rowHeight,
-          totalRows,
-          periods
-        );
-
       }
 
-      // ------------------------------------
-      // Current Page Teachers
-      // ------------------------------------
+      // ----------------------------------------
+      // Header
+      // ----------------------------------------
+
+      drawSchoolHeader(
+        doc,
+        date,
+        day,
+        absentTeachers.length
+      );
+
+      // ----------------------------------------
+      // Table Header
+      // ----------------------------------------
+
+      drawTableHeader(
+        doc,
+        startX,
+        startY,
+        teacherWidth,
+        periodWidth,
+        rowHeight,
+        periods
+      );
+
+      // ----------------------------------------
+      // Grid
+      // ----------------------------------------
+
+      drawGrid(
+        doc,
+        startX,
+        startY,
+        teacherWidth,
+        periodWidth,
+        rowHeight,
+        totalRows,
+        periods
+      );
+
+      // ----------------------------------------
+      // Current Page Teacher List
+      // ----------------------------------------
 
       const pageRows = teacherRows.slice(
-
         currentIndex,
-
         currentIndex + MAX_ROWS_PER_PAGE
-
       );
 
       pageRows.forEach((row, index) => {
 
         const y =
-
           startY +
-
           rowHeight +
-
-          index * rowHeight;
+          (index * rowHeight);
 
         drawTeacherRow(
-
           doc,
-
           row,
-
           y,
-
           startX,
-
           teacherWidth,
-
           periodWidth,
-
           periods
-
         );
 
       });
 
-      // ------------------------------------
-      // Next Page Index
-      // ------------------------------------
-
+      drawFooter(
+        doc,
+        doc.page.height - 70
+      );
       currentIndex += MAX_ROWS_PER_PAGE;
 
     }
-
-        // ========================================
-    // DRAW FOOTER (LAST PAGE ONLY)
-    // ========================================
-
-    const remainingRows =
-      totalTeachers % MAX_ROWS_PER_PAGE === 0
-        ? MAX_ROWS_PER_PAGE
-        : totalTeachers % MAX_ROWS_PER_PAGE;
-
-    const signY =
-      startY +
-      rowHeight +
-      remainingRows * rowHeight +
-      25;
-
-    drawFooter(
-      doc,
-      signY
-    );
 
     // ========================================
     // END PDF
