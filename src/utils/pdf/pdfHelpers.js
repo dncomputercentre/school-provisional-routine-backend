@@ -13,68 +13,117 @@ export function drawSchoolHeader(
   absentCount
 ) {
 
+  // ----------------------------
+  // School Name
+  // ----------------------------
+
   doc
+    .save()
     .font("Helvetica-Bold")
-    .fontSize(24)
+    .fontSize(22)
     .fillColor("#1E3A8A")
     .text(
       "Bhangar High School (H.S)",
+      20,
+      20,
       {
+        width: doc.page.width - 40,
         align: "center",
+        lineBreak: false,
       }
-    );
+    )
+    .restore();
+
+  // ----------------------------
+  // Address
+  // ----------------------------
 
   doc
-    .font("Helvetica-Bold")
-    .fontSize(13)
+    .save()
+    .font("Helvetica")
+    .fontSize(11)
     .fillColor("black")
     .text(
       "Bhangar, South 24 Parganas",
+      20,
+      46,
       {
+        width: doc.page.width - 40,
         align: "center",
+        lineBreak: false,
       }
-    );
-
-  // ===========================
-  // Header Line
-  // ===========================
-
-  doc
-    .moveTo(20, 58)
-    .lineTo(
-      doc.page.width - 20,
-      58
     )
-    .lineWidth(1)
-    .strokeColor("#666666")
-    .stroke();
+    .restore();
 
-  // ===========================
-  // Date
-  // ===========================
+  // ----------------------------
+  // Header Line
+  // ----------------------------
 
   doc
+    .save()
+    .moveTo(20, 68)
+    .lineTo(doc.page.width - 20, 68)
+    .lineWidth(1)
+    .strokeColor("#999999")
+    .stroke()
+    .restore();
+
+  // ----------------------------
+  // Date
+  // ----------------------------
+
+  doc
+    .save()
     .font("Helvetica-Bold")
-    .fontSize(11)
-    .fillColor("black");
+    .fontSize(10)
+    .fillColor("black")
+    .text(
+      `Date : ${date}`,
+      430,
+      80,
+      {
+        lineBreak: false,
+      }
+    )
+    .restore();
 
-  doc.text(
-    `Date : ${date}`,
-    430,
-    82
-  );
+  // ----------------------------
+  // Day
+  // ----------------------------
 
-  doc.text(
-    `Day : ${day}`,
-    560,
-    82
-  );
+  doc
+    .save()
+    .font("Helvetica-Bold")
+    .fontSize(10)
+    .fillColor("black")
+    .text(
+      `Day : ${day}`,
+      560,
+      80,
+      {
+        lineBreak: false,
+      }
+    )
+    .restore();
 
-  doc.text(
-    `Absent Teacher : ${absentCount}`,
-    675,
-    82
-  );
+  // ----------------------------
+  // Absent Count
+  // ----------------------------
+
+  doc
+    .save()
+    .font("Helvetica-Bold")
+    .fontSize(10)
+    .fillColor("black")
+    .text(
+      `Absent Teacher : ${absentCount}`,
+      675,
+      80,
+      {
+        lineBreak: false,
+      }
+    )
+    .restore();
 
 }
 
@@ -87,47 +136,57 @@ export function drawFooter(
   signY
 ) {
 
-  // ===========================
+  // ----------------------------
   // Generated Time
-  // ===========================
+  // ----------------------------
 
   doc
+    .save()
     .font("Helvetica-Oblique")
-    .fontSize(9)
-    .fillColor("black")
+    .fontSize(8)
+    .fillColor("#444")
     .text(
       `Generated On : ${new Date().toLocaleString()}`,
-      25,
-      signY + 25
-    );
+      20,
+      signY + 18,
+      {
+        lineBreak: false,
+      }
+    )
+    .restore();
 
-  // ===========================
+  // ----------------------------
   // Signature Line
-  // ===========================
+  // ----------------------------
 
   doc
+    .save()
     .moveTo(650, signY)
     .lineTo(790, signY)
     .lineWidth(1)
     .strokeColor("black")
-    .stroke();
+    .stroke()
+    .restore();
 
-  // ===========================
-  // Signature
-  // ===========================
+  // ----------------------------
+  // Signature Text
+  // ----------------------------
 
   doc
+    .save()
     .font("Helvetica-Bold")
-    .fontSize(11)
+    .fontSize(10)
     .fillColor("black")
     .text(
       "H.M Signature & Seal",
       650,
-      signY + 8,
+      signY + 6,
       {
         width: 140,
         align: "center",
+        lineBreak: false,
       }
-    );
+    )
+    .restore();
 
 }

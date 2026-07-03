@@ -16,10 +16,13 @@ export function drawTableHeader(
   periods
 ) {
 
+  // ===========================
   // Teacher Header
+  // ===========================
+
+  doc.save();
 
   doc
-    .save()
     .fillColor("#DCEAFB")
     .rect(
       startX,
@@ -27,10 +30,11 @@ export function drawTableHeader(
       teacherWidth,
       rowHeight
     )
-    .fill()
-    .restore();
+    .fill();
 
   doc
+    .lineWidth(0.7)
+    .strokeColor("black")
     .rect(
       startX,
       startY,
@@ -41,19 +45,24 @@ export function drawTableHeader(
 
   doc
     .font("Helvetica-Bold")
-    .fontSize(11)
+    .fontSize(10)
     .fillColor("black")
     .text(
       "Absent Teacher",
       startX,
-      startY + 15,
+      startY + 18,
       {
         width: teacherWidth,
         align: "center",
+        lineBreak: false,
       }
     );
 
-  // Period Header
+  doc.restore();
+
+  // ===========================
+  // Period Headers
+  // ===========================
 
   periods.forEach((period, index) => {
 
@@ -62,8 +71,9 @@ export function drawTableHeader(
       teacherWidth +
       index * periodWidth;
 
+    doc.save();
+
     doc
-      .save()
       .fillColor("#DCEAFB")
       .rect(
         x,
@@ -71,10 +81,11 @@ export function drawTableHeader(
         periodWidth,
         rowHeight
       )
-      .fill()
-      .restore();
+      .fill();
 
     doc
+      .lineWidth(0.7)
+      .strokeColor("black")
       .rect(
         x,
         startY,
@@ -90,25 +101,30 @@ export function drawTableHeader(
       .text(
         period.name,
         x,
-        startY + 6,
+        startY + 8,
         {
           width: periodWidth,
           align: "center",
+          lineBreak: false,
         }
       );
 
     doc
       .font("Helvetica")
       .fontSize(6)
+      .fillColor("black")
       .text(
         `(${period.time})`,
         x,
-        startY + 18,
+        startY + 22,
         {
           width: periodWidth,
           align: "center",
+          lineBreak: false,
         }
       );
+
+    doc.restore();
 
   });
 
@@ -136,9 +152,11 @@ export function drawGrid(
       rowHeight +
       row * rowHeight;
 
-    // Teacher Column
+    // Teacher Cell
 
     doc
+      .lineWidth(0.6)
+      .strokeColor("#666")
       .rect(
         startX,
         y,
@@ -147,7 +165,7 @@ export function drawGrid(
       )
       .stroke();
 
-    // Period Columns
+    // Period Cells
 
     periods.forEach((_, col) => {
 
@@ -157,6 +175,8 @@ export function drawGrid(
         col * periodWidth;
 
       doc
+        .lineWidth(0.6)
+        .strokeColor("#666")
         .rect(
           x,
           y,
