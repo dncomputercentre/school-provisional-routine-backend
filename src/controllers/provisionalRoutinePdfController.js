@@ -122,6 +122,8 @@ export const generateProvisionalRoutinePdf = async (
     const absentTeachers =
       await prisma.schoolTeacherAbsent.findMany({
 
+
+
         where: {
 
           date: {
@@ -150,7 +152,18 @@ export const generateProvisionalRoutinePdf = async (
 
         },
 
+
+
+
       });
+
+
+    console.log("========== ABSENT ==========");
+    console.log("Absent Count:", absentTeachers.length);
+
+    absentTeachers.forEach((t, i) => {
+      console.log(i + 1, t.teacher?.name);
+    });
 
     // ========================================
     // LOAD ALL TEACHERS
@@ -183,7 +196,18 @@ export const generateProvisionalRoutinePdf = async (
         )
 
       );
+    console.log("========== PROVISIONAL ==========");
 
+    provisionalData
+      .filter(r => r.isAbsent)
+      .forEach(r => {
+        console.log(
+          r.teacher?.name,
+          r.period,
+          r.className,
+          r.section
+        );
+      });
     // ========================================
     // PDF SETUP
     // ========================================
@@ -270,7 +294,14 @@ export const generateProvisionalRoutinePdf = async (
         });
 
     });
+    console.log("========== TEACHER ROWS ==========");
 
+    teacherRows.forEach(row => {
+      console.log(
+        row.teacherName,
+        Object.keys(row.periods)
+      );
+    });
     const totalTeachers =
       teacherRows.length;
 
@@ -338,6 +369,15 @@ export const generateProvisionalRoutinePdf = async (
         currentIndex,
         currentIndex + MAX_ROWS_PER_PAGE
       );
+      console.log("========== PAGE ==========");
+      console.log(
+        "Page:",
+        currentIndex / MAX_ROWS_PER_PAGE + 1
+      );
+
+      pageRows.forEach((t) => {
+        console.log(t.teacherName);
+      });
 
       pageRows.forEach((row, index) => {
 
@@ -360,7 +400,7 @@ export const generateProvisionalRoutinePdf = async (
 
       drawFooter(
         doc,
-        doc.page.height - 70
+        doc.page.height - 90
       );
       currentIndex += MAX_ROWS_PER_PAGE;
 
