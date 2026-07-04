@@ -18,15 +18,15 @@ export const teacherWidth = 145;
 
 export const periodWidth = 82;
 
-export const rowHeight = 60;
+export const rowHeight = 50;
 
 // ==========================
 // Table Rows
 // ==========================
 
-export const totalRows = 14;
+export const totalRows = 8;
 
-export const MAX_ROWS_PER_PAGE = 10;
+export const MAX_ROWS_PER_PAGE = 6;
 
 // ==========================
 // Period List

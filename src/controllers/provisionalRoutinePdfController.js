@@ -398,10 +398,9 @@ export const generateProvisionalRoutinePdf = async (
 
       });
 
-      drawFooter(
-        doc,
-        doc.page.height - 90
-      );
+      if (currentIndex + MAX_ROWS_PER_PAGE >= totalTeachers) {
+        drawFooter(doc, doc.page.height - 90);
+      }
       currentIndex += MAX_ROWS_PER_PAGE;
 
     }
