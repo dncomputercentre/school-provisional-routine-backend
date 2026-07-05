@@ -131,38 +131,5 @@ doc
     .restore();
 
     
-  // ----------------------------
-  // Signature Line
-  // ----------------------------
-
-  doc
-    .save()
-    .moveTo(650, signY)
-    .lineTo(790, signY)
-    .lineWidth(1)
-    .strokeColor("black")
-    .stroke()
-    .restore();
-
-  // ----------------------------
-  // Signature Text
-  // ----------------------------
-
-  doc
-    .save()
-    .font("Helvetica-Bold")
-    .fontSize(10)
-    .fillColor("black")
-    .text(
-      "H.M Signature & Seal",
-      650,
-      signY + 6,
-      {
-        width: 140,
-        align: "center",
-        lineBreak: false,
-      }
-    )
-    .restore();
-
+  
 }
