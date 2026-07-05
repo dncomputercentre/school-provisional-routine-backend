@@ -398,29 +398,24 @@ export const generateProvisionalRoutinePdf = async (
           periodWidth,
           periods
         );
-        // ----------------------------------------
-// Generated On (Only Last Page)
-// ----------------------------------------
-
-const isLastPage =
-  currentIndex + rowsThisPage >= totalTeachers;
-
-if (isLastPage) {
-
-  doc
-    .font("Helvetica-Oblique")
-    .fontSize(8)
-    .fillColor("#444")
-    .text(
-      `Generated On : ${new Date().toLocaleString()}`,
-      20,
-      doc.page.height - 25
-    );
-
-}
 
       });
+      doc.save();
 
+      doc.font("Helvetica-Oblique");
+      doc.fontSize(8);
+
+      doc.text(
+        `Generated On : ${new Date().toLocaleString()}`,
+        20,
+        doc.page.height - 25,
+        {
+          width: 250,
+          lineBreak: false
+        }
+      );
+
+      doc.restore();
 
       currentIndex += rowsThisPage;
 
@@ -429,7 +424,7 @@ if (isLastPage) {
     // ========================================
     // END PDF
     // ========================================
-    
+
     doc.end();
 
   } catch (err) {
