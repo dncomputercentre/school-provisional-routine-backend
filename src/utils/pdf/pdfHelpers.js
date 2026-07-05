@@ -19,7 +19,7 @@ export function drawSchoolHeader(
 doc
   .save()
   .font("Helvetica-Bold")
-  .fontSize(16)
+  .fontSize(10)
   .fillColor("black")
   .text(
     "H.M Signature & Seal",
