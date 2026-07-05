@@ -130,20 +130,9 @@ doc
     )
     .restore();
 
-}
-
-// ========================================
-// FOOTER
-// ========================================
-
-export function drawFooter(
-  doc,
-  signY
-) {
-
-  // ----------------------------
-  // Generated Time
-  // ----------------------------
+     // =====================================
+  // Generated On
+  // =====================================
 
   doc
     .save()
@@ -153,12 +142,16 @@ export function drawFooter(
     .text(
       `Generated On : ${new Date().toLocaleString()}`,
       20,
-      signY + 18,
+      74,
       {
         lineBreak: false,
       }
     )
     .restore();
+
+}
+
+
 
   // ----------------------------
   // Signature Line

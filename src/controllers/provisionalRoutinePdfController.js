@@ -400,22 +400,7 @@ export const generateProvisionalRoutinePdf = async (
         );
 
       });
-      doc.save();
-
-      doc.font("Helvetica-Oblique");
-      doc.fontSize(8);
-
-      doc.text(
-        `Generated On : ${new Date().toLocaleString()}`,
-        20,
-        doc.page.height - 25,
-        {
-          width: 250,
-          lineBreak: false
-        }
-      );
-
-      doc.restore();
+  
 
       currentIndex += rowsThisPage;
 
