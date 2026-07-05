@@ -12,7 +12,25 @@ export function drawSchoolHeader(
   day,
   absentCount
 ) {
+// =============================
+// H.M Signature
+// =============================
 
+doc
+  .save()
+  .font("Helvetica-Bold")
+  .fontSize(16)
+  .fillColor("black")
+  .text(
+    "H.M Signature & Seal",
+    20,
+    25,
+    {
+      width: 220,
+      align: "left",
+    }
+  )
+  .restore();
   // ----------------------------
   // School Name
   // ----------------------------

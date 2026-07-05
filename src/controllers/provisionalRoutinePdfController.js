@@ -11,14 +11,12 @@ import {
   teacherWidth,
   periodWidth,
   rowHeight,
-  totalRows,
   MAX_ROWS_PER_PAGE,
   periods,
 } from "../utils/pdf/pdfConstants.js";
 
 import {
   drawSchoolHeader,
-  drawFooter,
 } from "../utils/pdf/pdfHelpers.js";
 
 import {
@@ -86,8 +84,8 @@ export const generateProvisionalRoutinePdf = async (
     ];
 
     const day =
-  req.query.day ||
-  dayNames[selectedDate.getDay()];
+      req.query.day ||
+      dayNames[selectedDate.getDay()];
 
     // ========================================
     // LOAD CLASS ROUTINE
@@ -350,7 +348,18 @@ export const generateProvisionalRoutinePdf = async (
       // ----------------------------------------
       // Grid
       // ----------------------------------------
+      const remaining =
+        totalTeachers - currentIndex;
 
+      const rowsThisPage = Math.min(
+        MAX_ROWS_PER_PAGE,
+        remaining
+      );
+
+      const pageRows = teacherRows.slice(
+        currentIndex,
+        currentIndex + rowsThisPage
+      );
       drawGrid(
         doc,
         startX,
@@ -358,37 +367,20 @@ export const generateProvisionalRoutinePdf = async (
         teacherWidth,
         periodWidth,
         rowHeight,
-        totalRows,
+        rowsThisPage,
         periods
       );
 
-    // ----------------------------------------
-// Current Page Teacher List
-// ----------------------------------------
 
-const isLastPage =
-  currentIndex + MAX_ROWS_PER_PAGE >= totalTeachers;
+      console.log("========== PAGE ==========");
+      console.log(
+        "Page:",
+        currentIndex / MAX_ROWS_PER_PAGE + 1
+      );
 
-let rowsThisPage = MAX_ROWS_PER_PAGE;
-
-if (isLastPage) {
-  rowsThisPage = MAX_ROWS_PER_PAGE - 2; // শেষ পেজে ২টি row খালি
-}
-
-const pageRows = teacherRows.slice(
-  currentIndex,
-  currentIndex + rowsThisPage
-);
-
-console.log("========== PAGE ==========");
-console.log(
-  "Page:",
-  currentIndex / MAX_ROWS_PER_PAGE + 1
-);
-
-pageRows.forEach((t) => {
-  console.log(t.teacherName);
-});
+      pageRows.forEach((t) => {
+        console.log(t.teacherName);
+      });
 
       pageRows.forEach((row, index) => {
 
@@ -409,15 +401,7 @@ pageRows.forEach((t) => {
 
       });
 
-      if (currentIndex + MAX_ROWS_PER_PAGE >= totalTeachers) {
-        const footerY =
-          startY +
-          rowHeight +
-          (rowsThisPage * rowHeight) +
-          15;
 
-        drawFooter(doc, footerY);
-      }
       currentIndex += rowsThisPage;
 
     }
@@ -425,7 +409,15 @@ pageRows.forEach((t) => {
     // ========================================
     // END PDF
     // ========================================
-
+    doc
+      .font("Helvetica-Oblique")
+      .fontSize(8)
+      .fillColor("#444")
+      .text(
+        `Generated On : ${new Date().toLocaleString()}`,
+        20,
+        doc.page.height - 25
+      );
     doc.end();
 
   } catch (err) {

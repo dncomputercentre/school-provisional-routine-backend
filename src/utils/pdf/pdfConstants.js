@@ -8,7 +8,7 @@
 
 export const startX = 20;
 
-export const startY = 115;
+export const startY = 110;
 
 // ==========================
 // Cell Size
@@ -26,7 +26,7 @@ export const rowHeight = 50;
 
 export const totalRows = 8;
 
-export const MAX_ROWS_PER_PAGE = 6;
+export const MAX_ROWS_PER_PAGE = 8;
 
 // ==========================
 // Period List
