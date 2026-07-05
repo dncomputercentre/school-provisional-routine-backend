@@ -130,29 +130,7 @@ doc
     )
     .restore();
 
-     // =====================================
-  // Generated On
-  // =====================================
-
-  doc
-    .save()
-    .font("Helvetica-Oblique")
-    .fontSize(8)
-    .fillColor("#444")
-    .text(
-      `Generated On : ${new Date().toLocaleString()}`,
-      20,
-      74,
-      {
-        lineBreak: false,
-      }
-    )
-    .restore();
-
-}
-
-
-
+    
   // ----------------------------
   // Signature Line
   // ----------------------------
