@@ -56,19 +56,6 @@ export function drawSchoolHeader(
     .restore();
 
   // ----------------------------
-  // Header Line
-  // ----------------------------
-
-  doc
-    .save()
-    .moveTo(20, 68)
-    .lineTo(doc.page.width - 20, 68)
-    .lineWidth(1)
-    .strokeColor("#999999")
-    .stroke()
-    .restore();
-
-  // ----------------------------
   // Date
   // ----------------------------
 

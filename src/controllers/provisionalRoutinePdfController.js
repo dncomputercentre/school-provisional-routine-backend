@@ -86,7 +86,8 @@ export const generateProvisionalRoutinePdf = async (
     ];
 
     const day =
-      dayNames[selectedDate.getDay()];
+  process.env.DEBUG_DAY ||
+  dayNames[selectedDate.getDay()];
 
     // ========================================
     // LOAD CLASS ROUTINE
@@ -361,23 +362,33 @@ export const generateProvisionalRoutinePdf = async (
         periods
       );
 
-      // ----------------------------------------
-      // Current Page Teacher List
-      // ----------------------------------------
+    // ----------------------------------------
+// Current Page Teacher List
+// ----------------------------------------
 
-      const pageRows = teacherRows.slice(
-        currentIndex,
-        currentIndex + MAX_ROWS_PER_PAGE
-      );
-      console.log("========== PAGE ==========");
-      console.log(
-        "Page:",
-        currentIndex / MAX_ROWS_PER_PAGE + 1
-      );
+const isLastPage =
+  currentIndex + MAX_ROWS_PER_PAGE >= totalTeachers;
 
-      pageRows.forEach((t) => {
-        console.log(t.teacherName);
-      });
+let rowsThisPage = MAX_ROWS_PER_PAGE;
+
+if (isLastPage) {
+  rowsThisPage = MAX_ROWS_PER_PAGE - 2; // শেষ পেজে ২টি row খালি
+}
+
+const pageRows = teacherRows.slice(
+  currentIndex,
+  currentIndex + rowsThisPage
+);
+
+console.log("========== PAGE ==========");
+console.log(
+  "Page:",
+  currentIndex / MAX_ROWS_PER_PAGE + 1
+);
+
+pageRows.forEach((t) => {
+  console.log(t.teacherName);
+});
 
       pageRows.forEach((row, index) => {
 
@@ -399,9 +410,15 @@ export const generateProvisionalRoutinePdf = async (
       });
 
       if (currentIndex + MAX_ROWS_PER_PAGE >= totalTeachers) {
-        drawFooter(doc, doc.page.height - 90);
+        const footerY =
+          startY +
+          rowHeight +
+          (rowsThisPage * rowHeight) +
+          15;
+
+        drawFooter(doc, footerY);
       }
-      currentIndex += MAX_ROWS_PER_PAGE;
+      currentIndex += rowsThisPage;
 
     }
 
