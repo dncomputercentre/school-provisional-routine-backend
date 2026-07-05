@@ -138,3 +138,62 @@ export const resetAllAbsentTeachers = async (
     });
   }
 };
+
+
+/* ================= GET ABSENT TEACHER BY DATE ================= */
+export const getAbsentTeacherByDate = async (req, res) => {
+
+  try {
+
+    const { date } = req.params;
+
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+
+    const list =
+      await prisma.schoolTeacherAbsent.findMany({
+
+        where: {
+          date: {
+            gte: start,
+            lte: end,
+          },
+        },
+
+        include: {
+          teacher: true,
+        },
+
+        orderBy: {
+          teacher: {
+            name: "asc",
+          },
+        },
+
+      });
+
+    res.json({
+
+      success: true,
+      total: list.length,
+      data: list,
+
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+
+      success: false,
+      error: err.message,
+
+    });
+
+  }
+
+};
