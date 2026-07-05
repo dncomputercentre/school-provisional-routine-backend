@@ -86,7 +86,7 @@ export const generateProvisionalRoutinePdf = async (
     ];
 
     const day =
-  process.env.DEBUG_DAY ||
+  req.query.day ||
   dayNames[selectedDate.getDay()];
 
     // ========================================
