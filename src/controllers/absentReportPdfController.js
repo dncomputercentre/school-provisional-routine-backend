@@ -116,17 +116,29 @@ export const generateAbsentReportPdf = async (req, res) => {
         }
       );
 
-    doc.moveDown(0.4);
+    doc.moveDown(0.15);
 
-    doc
-      .fontSize(18)
-      .text(
-        "Date Wise Absent Teacher Report",
-        {
-          align: "center",
-        }
-      );
+doc
+  .font("Helvetica")
+  .fontSize(12)
+  .text(
+    "Bhangar, South 24 Parganas",
+    {
+      align: "center",
+    }
+  );
 
+doc.moveDown(0.3);
+
+doc
+  .font("Helvetica-Bold")
+  .fontSize(16)
+  .text(
+    "Date Wise Absent Teacher Report",
+    {
+      align: "center",
+    }
+  );
     doc.moveDown(1);
 
     doc
@@ -149,26 +161,26 @@ export const generateAbsentReportPdf = async (req, res) => {
       );
 
     doc
-      .moveDown(0.5)
+      .moveDown(0.8)
       .font("Helvetica-Bold")
       .text(
         `Total Teachers : ${teachers.length}`
       );
 
-    doc.moveDown();
+    doc.moveDown(0.5);
 
     // =============================================
     // TABLE HEADER
     // =============================================
 
     const startX = 40;
-    let startY = 180;
+    let startY = 170;
 
     const slWidth = 50;
     const teacherWidth = 180;
     const dateWidth = 290;
 
-    const rowHeight = 55;
+    const rowHeight = 40;
 
     doc
       .rect(
@@ -205,7 +217,7 @@ export const generateAbsentReportPdf = async (req, res) => {
       .text(
         "SL.No",
         startX,
-        startY + 18,
+        startY + 13,
         {
           width: slWidth,
           align: "center",
@@ -215,7 +227,7 @@ export const generateAbsentReportPdf = async (req, res) => {
     doc.text(
       "Teachers",
       startX + slWidth,
-      startY + 18,
+      startY + 13,
       {
         width: teacherWidth,
         align: "center",
@@ -227,7 +239,7 @@ export const generateAbsentReportPdf = async (req, res) => {
       startX +
         slWidth +
         teacherWidth,
-      startY + 18,
+      startY + 13,
       {
         width: dateWidth,
         align: "center",
@@ -246,7 +258,7 @@ export const generateAbsentReportPdf = async (req, res) => {
     teachers.forEach((teacher, index) => {
 
       // Auto Page Break
-      if (startY > 740) {
+      if (startY + rowHeight > 760) {
 
         doc.addPage();
 
@@ -293,7 +305,7 @@ export const generateAbsentReportPdf = async (req, res) => {
           .text(
             "SL.No",
             startX,
-            startY + 18,
+            startY + 13,
             {
               width: slWidth,
               align: "center",
@@ -303,7 +315,7 @@ export const generateAbsentReportPdf = async (req, res) => {
         doc.text(
           "Teachers",
           startX + slWidth,
-          startY + 18,
+          startY + 13,
           {
             width: teacherWidth,
             align: "center",
@@ -313,7 +325,7 @@ export const generateAbsentReportPdf = async (req, res) => {
         doc.text(
           "Dates",
           startX + slWidth + teacherWidth,
-          startY + 18,
+          startY + 13,
           {
             width: dateWidth,
             align: "center",
@@ -353,7 +365,7 @@ export const generateAbsentReportPdf = async (req, res) => {
         .text(
           index + 1,
           startX,
-          startY + 18,
+          startY + 13,
           {
             width: slWidth,
             align: "center",
@@ -367,7 +379,7 @@ export const generateAbsentReportPdf = async (req, res) => {
         .text(
           teacher.teacherName,
           startX + slWidth + 8,
-          startY + 8
+          startY + 5
         );
 
       doc
@@ -377,7 +389,7 @@ export const generateAbsentReportPdf = async (req, res) => {
         .text(
           `Total Absent : ${teacher.totalAbsent} Day(s)`,
           startX + slWidth + 8,
-          startY + 28
+          startY + 20
         );
 
       doc.fillColor("black");
@@ -389,7 +401,7 @@ export const generateAbsentReportPdf = async (req, res) => {
         .text(
           teacher.dates.join(", "),
           startX + slWidth + teacherWidth + 8,
-          startY + 10,
+          startY + 8,
           {
             width: dateWidth - 16,
             align: "left",
