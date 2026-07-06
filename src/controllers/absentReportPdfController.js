@@ -118,63 +118,55 @@ export const generateAbsentReportPdf = async (req, res) => {
 
     doc.moveDown(0.15);
 
-doc
-  .font("Helvetica")
-  .fontSize(12)
-  .text(
-    "Bhangar, South 24 Parganas",
-    {
-      align: "center",
-    }
-  );
+    doc
+      .font("Helvetica")
+      .fontSize(12)
+      .text(
+        "Bhangar, South 24 Parganas",
+        {
+          align: "center",
+        }
+      );
 
-doc.moveDown(0.3);
+    doc.moveDown(0.3);
 
-doc
-  .font("Helvetica-Bold")
-  .fontSize(16)
-  .text(
-    "Date Wise Absent Teacher Report",
-    {
-      align: "center",
-    }
-  );
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(16)
+      .text(
+        "Date Wise Absent Teacher Report",
+        {
+          align: "center",
+        }
+      );
     doc.moveDown(1);
-
     doc
       .font("Helvetica")
       .fontSize(15)
-      .text(
-        `From : ${from || "-"}`,
-        {
-          align: "left",
-        }
-      );
+      .text(`From : ${from || "-"}`, 40, 145);
 
     doc
-      .moveDown(0.2)
-      .text(
-        `To : ${to || "-"}`,
-        {
-          align: "left",
-        }
-      );
+      .text(`To : ${to || "-"}`, 40, 175);
 
     doc
-      .moveDown(0.8)
       .font("Helvetica-Bold")
+      .fontSize(15)
       .text(
-        `Total Teachers : ${teachers.length}`
+        `Total Teachers : ${teachers.length}`,
+        350,
+        175,
+        {
+          width: 180,
+          align: "right",
+        }
       );
-
-    doc.moveDown(0.5);
 
     // =============================================
     // TABLE HEADER
     // =============================================
 
     const startX = 40;
-    let startY = 170;
+    let startY = 205;
 
     const slWidth = 50;
     const teacherWidth = 180;
@@ -203,8 +195,8 @@ doc
     doc
       .rect(
         startX +
-          slWidth +
-          teacherWidth,
+        slWidth +
+        teacherWidth,
         startY,
         dateWidth,
         rowHeight
@@ -237,8 +229,8 @@ doc
     doc.text(
       "Dates",
       startX +
-        slWidth +
-        teacherWidth,
+      slWidth +
+      teacherWidth,
       startY + 13,
       {
         width: dateWidth,
@@ -248,7 +240,7 @@ doc
 
     startY += rowHeight;
 
-        // =============================================
+    // =============================================
     // TABLE DATA
     // =============================================
 
