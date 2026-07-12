@@ -261,15 +261,17 @@ export const generateRoutinePdf = async (req, res) => {
       // ================= DAY CELL =================
 
       doc
+        .fillColor("#E8F1FF") // হালকা নীল
         .rect(
           startX,
           currentY,
           dayWidth,
           rowHeight
         )
-        .stroke();
+        .fillAndStroke("#E8F1FF", "#000000");
 
       doc
+        .fillColor("black")
         .font("Helvetica-Bold")
         .fontSize(10)
         .text(
