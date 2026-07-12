@@ -149,7 +149,14 @@ export const generateRoutinePdf = async (req, res) => {
 
     // ================= DAY ROWS =================
 
-    const rowHeight = 68;
+    let rowHeight = 68;
+
+    if (
+      className === "Class-XI" ||
+      className === "Class-XII"
+    ) {
+      rowHeight = 130;
+    }
 
     days.forEach((day, rowIndex) => {
 
@@ -239,7 +246,7 @@ export const generateRoutinePdf = async (req, res) => {
 
   } catch (err) {
 
-    
+
 
   }
 };
