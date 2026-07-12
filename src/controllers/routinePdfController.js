@@ -241,7 +241,7 @@ export const generateRoutinePdf = async (req, res) => {
         className === "Class-XI" ||
         className === "Class-XII"
       ) {
-        rowHeight = Math.max(90, maxItems * 18 + 45);
+        rowHeight = Math.max(90, maxItems * 18 + 50);
       } else {
         rowHeight = 50;
       }
