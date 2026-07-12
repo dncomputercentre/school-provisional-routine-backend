@@ -150,14 +150,6 @@ export const generateRoutinePdf = async (req, res) => {
     // ================= DAY ROWS =================
 
     let rowHeight = 68;
-
-    if (
-      className === "Class-XI" ||
-      className === "Class-XII"
-    ) {
-      rowHeight = 130;
-    }
-
     days.forEach((day, rowIndex) => {
 
       const y =
