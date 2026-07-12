@@ -16,14 +16,12 @@ export const generateRoutinePdf = async (req, res) => {
       include: {
         teacher: true,
       },
+      orderBy: [
+        { day: "asc" },
+        { period: "asc" },
+      ],
     });
-    console.log(
-      routines.filter(
-        r =>
-          r.day === "Monday" &&
-          r.period === "Eight"
-      )
-    );
+
     const doc = new PDFDocument({
       size: "A4",
       layout: "landscape",
@@ -35,42 +33,65 @@ export const generateRoutinePdf = async (req, res) => {
       "application/pdf"
     );
 
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename=Routine.pdf`
+    );
+
     doc.pipe(res);
 
-    // ================= HEADER =================
+    // =====================================
+    // HEADER
+    // =====================================
 
-    doc
-      .fontSize(20)
-      .font("Helvetica-Bold")
-      .text("Bhangar High School (H.S)", {
-        align: "center",
-      });
+    const drawHeader = () => {
 
-    doc
-      .moveDown(0.2)
-      .fontSize(13)
-      .font("Helvetica")
-      .text("Bhangar, South 24 Pgs (S)", {
-        align: "center",
-      });
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(20)
+        .text(
+          "BHANGAR HIGH SCHOOL (H.S)",
+          {
+            align: "center",
+          }
+        );
 
-    doc
-      .moveDown(0.4)
-      .fontSize(17)
-      .font("Helvetica-Bold")
-      .text(`Class : ${className}   |   ${section}`, {
-        align: "center",
-      });
+      doc
+        .moveDown(0.2)
+        .font("Helvetica")
+        .fontSize(13)
+        .text(
+          "Bhangar, South 24 Parganas",
+          {
+            align: "center",
+          }
+        );
 
-    doc.moveDown(2);
+      doc
+        .moveDown(0.4)
+        .font("Helvetica-Bold")
+        .fontSize(16)
+        .text(
+          `Class : ${className}   |   Section : ${section}`,
+          {
+            align: "center",
+          }
+        );
 
-    // ================= TABLE SETTINGS =================
+    };
 
-    const startX = 40;
-    const startY = 90;
+    drawHeader();
 
-    const dayColWidth = 85;
-    const periodWidth = 75;
+    // =====================================
+    // TABLE SETTINGS
+    // =====================================
+
+    const startX = 35;
+    const startY = 105;
+
+    const dayWidth = 80;
+    const periodWidth = 78;
+    const headerHeight = 55;
 
     const periods = [
       "First",
@@ -93,152 +114,242 @@ export const generateRoutinePdf = async (req, res) => {
       "Saturday",
     ];
 
-    // ================= HEADER ROW =================
+    // =====================================
+    // DRAW TABLE HEADER
+    // =====================================
 
-    doc.rect(
-      startX,
-      startY,
-      dayColWidth,
-      60
-    ).stroke();
-
-    periods.forEach((period, index) => {
-
-      const x =
-        startX +
-        dayColWidth +
-        index * periodWidth;
-
-      doc.rect(
-        x,
-        startY,
-        periodWidth,
-        60
-      ).stroke();
+    const drawTableHeader = (y) => {
 
       doc
-        .fontSize(10)
+        .rect(
+          startX,
+          y,
+          dayWidth,
+          headerHeight
+        )
+        .stroke();
+
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(11)
         .text(
-          period,
-          x,
-          startY + 8,
+          "Day",
+          startX,
+          y + 18,
           {
-            width: periodWidth,
+            width: dayWidth,
             align: "center",
           }
         );
 
-      const routine = routines.find(
-        (r) => r.period === period
-      );
+      periods.forEach((period, index) => {
 
-      if (routine?.time) {
+        const x =
+          startX +
+          dayWidth +
+          index * periodWidth;
+
         doc
+          .rect(
+            x,
+            y,
+            periodWidth,
+            headerHeight
+          )
+          .stroke();
+
+        doc
+          .font("Helvetica-Bold")
           .fontSize(9)
           .text(
-            routine.time,
+            period,
             x,
-            startY + 28,
+            y + 5,
             {
               width: periodWidth,
               align: "center",
             }
           );
-      }
-    });
 
-    // ================= DAY ROWS =================
-
-    let rowHeight = 68;
-    days.forEach((day, rowIndex) => {
-
-      const y =
-        startY +
-        60 +
-        rowIndex * rowHeight;
-
-      // Day Cell
-
-      doc.rect(
-        startX,
-        y,
-        dayColWidth,
-        rowHeight
-      ).stroke();
-
-      doc
-        .fontSize(11)
-        .text(
-          day,
-          startX + 8,
-          y + 25
+        const routine = routines.find(
+          r => r.period === period
         );
 
-      periods.forEach(
-        (period, colIndex) => {
+        if (routine?.time) {
 
-          const x =
-            startX +
-            dayColWidth +
-            colIndex * periodWidth;
+          doc
+            .font("Helvetica")
+            .fontSize(8)
+            .text(
+              routine.time,
+              x,
+              y + 25,
+              {
+                width: periodWidth,
+                align: "center",
+              }
+            );
 
-          doc.rect(
+        }
+
+      });
+
+    };
+
+    drawTableHeader(startY);
+
+    // ==========================
+    // PART-2 এখান থেকে শুরু হবে
+    // ==========================
+
+    let currentY =
+      startY + headerHeight;
+
+          // =====================================
+    // DAY ROWS
+    // =====================================
+
+    for (const day of days) {
+
+      // এই দিনের সবচেয়ে বড় Period-এর Entry Count
+      let maxItems = 1;
+
+      periods.forEach((period) => {
+
+        const count = routines.filter(
+          r =>
+            r.day === day &&
+            r.period === period
+        ).length;
+
+        if (count > maxItems) {
+          maxItems = count;
+        }
+
+      });
+
+      // Dynamic Row Height
+      const rowHeight =
+        className === "Class-XI" ||
+        className === "Class-XII"
+          ? Math.max(70, maxItems * 22 + 25)
+          : 68;
+
+      // ================= PAGE BREAK =================
+
+      if (
+        currentY + rowHeight >
+        doc.page.height - 40
+      ) {
+
+        doc.addPage();
+
+        drawHeader();
+
+        drawTableHeader(startY);
+
+        currentY =
+          startY + headerHeight;
+
+      }
+
+      // ================= DAY CELL =================
+
+      doc
+        .rect(
+          startX,
+          currentY,
+          dayWidth,
+          rowHeight
+        )
+        .stroke();
+
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(10)
+        .text(
+          day,
+          startX,
+          currentY + rowHeight / 2 - 6,
+          {
+            width: dayWidth,
+            align: "center",
+          }
+        );
+
+      // ================= PERIOD CELLS =================
+
+      periods.forEach((period, colIndex) => {
+
+        const x =
+          startX +
+          dayWidth +
+          colIndex * periodWidth;
+
+        doc
+          .rect(
             x,
-            y,
+            currentY,
             periodWidth,
             rowHeight
-          ).stroke();
+          )
+          .stroke();
 
-          const items = routines.filter(
-            (r) =>
-              r.day === day &&
-              r.period === period
-          );
+        const items = routines.filter(
+          r =>
+            r.day === day &&
+            r.period === period
+        );
 
-          if (items.length > 0) {
+        if (items.length === 0) return;
 
-            const subjects = items
-              .map(i => i.subject)
-              .join(" / ");
+        let text = "";
 
-            const teachers = items
-              .map(i => i.teacher?.name)
-              .join(" / ");
+        items.forEach((item) => {
 
-            doc
-              .fontSize(10)
-              .text(
-                subjects,
-                x + 5,
-                y + 10,
-                {
-                  width: periodWidth - 10,
-                  align: "center",
-                }
-              );
+          text +=
+            `${item.subject}\n`;
 
-            doc
-              .fontSize(9)
-              .text(
-                teachers,
-                x + 5,
-                y + 30,
-                {
-                  width: periodWidth - 10,
-                  align: "center",
-                }
-              );
-          }
+          text +=
+            `${item.teacher?.name || ""}\n\n`;
 
         });
 
-    });
+        doc
+          .font("Helvetica")
+          .fontSize(
+            className === "Class-XI" ||
+            className === "Class-XII"
+              ? 8
+              : 9
+          )
+          .text(
+            text.trim(),
+            x + 3,
+            currentY + 5,
+            {
+              width: periodWidth - 6,
+              align: "center",
+            }
+          );
+
+      });
+
+      currentY += rowHeight;
+
+    }
 
     doc.end();
 
   } catch (err) {
 
+    console.log(err);
 
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
 
   }
+
 };
