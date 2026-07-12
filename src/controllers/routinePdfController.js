@@ -121,13 +121,16 @@ export const generateRoutinePdf = async (req, res) => {
     const drawTableHeader = (y) => {
 
       doc
+        .fillColor("#D6EAF8")
         .rect(
           startX,
           y,
           dayWidth,
           headerHeight
         )
-        .stroke();
+        .fillAndStroke("#D6EAF8", "#000000");
+
+      doc.fillColor("black");
 
       doc
         .font("Helvetica-Bold")
@@ -150,15 +153,17 @@ export const generateRoutinePdf = async (req, res) => {
           index * periodWidth;
 
         doc
+          .fillColor("#D6EAF8")   // Light Blue
           .rect(
             x,
             y,
             periodWidth,
             headerHeight
           )
-          .stroke();
+          .fillAndStroke("#D6EAF8", "#000000");
 
         doc
+          .fillColor("black")
           .font("Helvetica-Bold")
           .fontSize(9)
           .text(
@@ -178,6 +183,7 @@ export const generateRoutinePdf = async (req, res) => {
         if (routine?.time) {
 
           doc
+            .fillColor("black")
             .font("Helvetica")
             .fontSize(8)
             .text(
