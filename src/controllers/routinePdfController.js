@@ -90,8 +90,8 @@ export const generateRoutinePdf = async (req, res) => {
     const startY = 105;
 
     const dayWidth = 80;
-    const periodWidth = 78;
-    const headerHeight = 55;
+    const periodWidth = 76;
+    const headerHeight = 50;
 
     const periods = [
       "First",
@@ -205,7 +205,7 @@ export const generateRoutinePdf = async (req, res) => {
     let currentY =
       startY + headerHeight;
 
-          // =====================================
+    // =====================================
     // DAY ROWS
     // =====================================
 
@@ -229,11 +229,16 @@ export const generateRoutinePdf = async (req, res) => {
       });
 
       // Dynamic Row Height
-      const rowHeight =
+      let rowHeight;
+
+      if (
         className === "Class-XI" ||
         className === "Class-XII"
-          ? Math.max(70, maxItems * 22 + 25)
-          : 68;
+      ) {
+        rowHeight = Math.max(90, maxItems * 18 + 15);
+      } else {
+        rowHeight = 50;
+      }
 
       // ================= PAGE BREAK =================
 
@@ -302,36 +307,54 @@ export const generateRoutinePdf = async (req, res) => {
         );
 
         if (items.length === 0) return;
-
-        let text = "";
+        let lineY = currentY + 5;
 
         items.forEach((item) => {
 
-          text +=
-            `${item.subject}\n`;
+          // Subject (Bold)
+          doc
+            .font("Helvetica-Bold")
+            .fontSize(
+              className === "Class-XI" ||
+                className === "Class-XII"
+                ? 8
+                : 9
+            )
+            .text(
+              item.subject,
+              x + 3,
+              lineY,
+              {
+                width: periodWidth - 6,
+                align: "center",
+              }
+            );
 
-          text +=
-            `${item.teacher?.name || ""}\n`;
+          lineY += 11;
+
+          // Teacher (Normal)
+          doc
+            .font("Helvetica")
+            .fontSize(
+              className === "Class-XI" ||
+                className === "Class-XII"
+                ? 7
+                : 8
+            )
+            .text(
+              item.teacher?.name || "",
+              x + 3,
+              lineY,
+              {
+                width: periodWidth - 6,
+                align: "center",
+              }
+            );
+
+          // Subject-Teacher pair এর মাঝে Gap
+          lineY += 12;
 
         });
-
-        doc
-          .font("Helvetica")
-          .fontSize(
-            className === "Class-XI" ||
-            className === "Class-XII"
-              ? 8
-              : 9
-          )
-          .text(
-            text.trim(),
-            x + 3,
-            currentY + 5,
-            {
-              width: periodWidth - 6,
-              align: "center",
-            }
-          );
 
       });
 
