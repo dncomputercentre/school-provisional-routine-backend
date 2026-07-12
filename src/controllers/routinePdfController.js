@@ -311,7 +311,7 @@ export const generateRoutinePdf = async (req, res) => {
             `${item.subject}\n`;
 
           text +=
-            `${item.teacher?.name || ""}\n\n`;
+            `${item.teacher?.name || ""}\n`;
 
         });
 
