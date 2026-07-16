@@ -190,3 +190,132 @@ export function drawGrid(
   }
 
 }
+
+
+// ========================================
+// ASSIGNED TEACHER TABLE HEADER
+// ========================================
+
+export function drawAssignedTeacherTableHeader(
+  doc,
+  startX,
+  startY,
+  teacherWidth,
+  periodWidth,
+  rowHeight,
+  periods
+) {
+
+  // ===========================
+  // Teacher Header
+  // ===========================
+
+  doc.save();
+
+  doc
+    .fillColor("#DCEAFB")
+    .rect(
+      startX,
+      startY,
+      teacherWidth,
+      rowHeight
+    )
+    .fill();
+
+  doc
+    .lineWidth(0.7)
+    .strokeColor("black")
+    .rect(
+      startX,
+      startY,
+      teacherWidth,
+      rowHeight
+    )
+    .stroke();
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(10)
+    .fillColor("black")
+    .text(
+      "Assigned Teacher",
+      startX,
+      startY + 18,
+      {
+        width: teacherWidth,
+        align: "center",
+        lineBreak: false,
+      }
+    );
+
+  doc.restore();
+
+  // ===========================
+  // Period Header
+  // ===========================
+
+  periods.forEach((period, index) => {
+
+    const x =
+      startX +
+      teacherWidth +
+      index * periodWidth;
+
+    doc.save();
+
+    doc
+      .fillColor("#DCEAFB")
+      .rect(
+        x,
+        startY,
+        periodWidth,
+        rowHeight
+      )
+      .fill();
+
+    doc
+      .lineWidth(0.7)
+      .strokeColor("black")
+      .rect(
+        x,
+        startY,
+        periodWidth,
+        rowHeight
+      )
+      .stroke();
+
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(8)
+      .fillColor("black")
+      .text(
+        period.name,
+        x,
+        startY + 8,
+        {
+          width: periodWidth,
+          align: "center",
+          lineBreak: false,
+        }
+      );
+
+    doc
+      .font("Helvetica")
+      .fontSize(6)
+      .fillColor("black")
+      .text(
+        `(${period.time})`,
+        x,
+        startY + 22,
+        {
+          width: periodWidth,
+          align: "center",
+          lineBreak: false,
+        }
+      );
+
+    doc.restore();
+
+  });
+
+}

@@ -180,3 +180,126 @@ export function drawTeacherRow(
   });
 
 }
+
+// ========================================
+// ASSIGNED TEACHER ROW
+// ========================================
+
+export function drawAssignedTeacherRow(
+  doc,
+  row,
+  y,
+  startX,
+  teacherWidth,
+  periodWidth,
+  periods
+) {
+
+  // ===========================
+  // Teacher Name
+  // ===========================
+
+  doc
+    .save()
+    .font("Helvetica-Bold")
+    .fontSize(9)
+    .fillColor("black")
+    .text(
+      row.teacherName || "-",
+      startX + 3,
+      y + 20,
+      {
+        width: teacherWidth - 6,
+        align: "center",
+        lineBreak: false,
+      }
+    )
+    .restore();
+
+  // ===========================
+  // Period Cells
+  // ===========================
+
+  periods.forEach((period, index) => {
+
+    const info =
+      row.periods[period.name];
+
+    if (!info) return;
+
+    const x =
+      startX +
+      teacherWidth +
+      index * periodWidth;
+
+    // -----------------------
+    // Class
+    // -----------------------
+
+    doc
+      .save()
+      .font("Helvetica-Bold")
+      .fontSize(7.5)
+      .fillColor("black")
+      .text(
+        `${info.className}-${info.section}`,
+        x + 2,
+        y + 4,
+        {
+          width: periodWidth - 4,
+          align: "center",
+          lineBreak: false,
+        }
+      )
+      .restore();
+
+    // -----------------------
+    // Subject
+    // -----------------------
+
+    doc
+      .save()
+      .font("Helvetica")
+      .fontSize(7)
+      .fillColor("black")
+      .text(
+        info.subject,
+        x + 2,
+        y + 17,
+        {
+          width: periodWidth - 4,
+          align: "center",
+          lineBreak: false,
+        }
+      )
+      .restore();
+
+    // -----------------------
+    // Type
+    // -----------------------
+
+    const color =
+      info.type === "Normal"
+        ? "#15803D"
+        : "#2563EB";
+
+    doc
+      .save()
+      .font("Helvetica-Bold")
+      .fontSize(7)
+      .fillColor(color)
+      .text(
+        info.type,
+        x + 2,
+        y + 31,
+        {
+          width: periodWidth - 4,
+          align: "center",
+          lineBreak: false,
+        }
+      )
+      .restore();
+
+  });
+
+}
