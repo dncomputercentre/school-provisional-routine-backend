@@ -113,6 +113,12 @@ export const getAssignedTeacherReport = async (
     // Response
     // ======================================
     console.log("Response Sent");
+    const smallReport = report.map(item => ({
+      teacherId: item.teacherId,
+      teacherName: item.teacherName,
+      totalProvisional: item.totalProvisional,
+    }));
+
     res.json({
 
       success: true,
@@ -121,13 +127,11 @@ export const getAssignedTeacherReport = async (
 
       to,
 
-      totalTeachers:
-        report.length,
+      totalTeachers: smallReport.length,
 
-      data: report,
+      data: smallReport,
 
     });
-
   } catch (err) {
 
     console.log(
