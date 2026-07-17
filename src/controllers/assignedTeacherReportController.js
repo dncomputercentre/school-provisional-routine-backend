@@ -21,7 +21,8 @@ export const getAssignedTeacherReport = async (
   req,
   res
 ) => {
-
+  console.log("===== Assigned Teacher Report API =====");
+  console.log("Query:", req.query);
   try {
 
     // ======================================
@@ -92,7 +93,7 @@ export const getAssignedTeacherReport = async (
 
     }
 
-       // ======================================
+    // ======================================
     // Build Report
     // ======================================
 
@@ -106,11 +107,12 @@ export const getAssignedTeacherReport = async (
         prisma
 
       );
+    console.log("Report Length:", report.length);
 
     // ======================================
     // Response
     // ======================================
-
+    console.log("Response Sent");
     res.json({
 
       success: true,
