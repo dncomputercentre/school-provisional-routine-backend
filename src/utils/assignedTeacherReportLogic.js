@@ -30,6 +30,28 @@ const PERIOD_ORDER = [
 
 ];
 
+// ==========================================
+// Day Names
+// ==========================================
+
+const DAY_NAMES = [
+
+    "Sunday",
+
+    "Monday",
+
+    "Tuesday",
+
+    "Wednesday",
+
+    "Thursday",
+
+    "Friday",
+
+    "Saturday",
+
+];
+
 
 function createTeacherObject(
     teacherId,
@@ -136,7 +158,83 @@ export async function buildAssignedTeacherReport(
 ) {
 
     const teacherMap = {};
+    // ======================================
+    // Load All Teachers (Only Once)
+    // ======================================
 
+    const teachers = await prisma.schoolTeacher.findMany({
+        orderBy: {
+            name: "asc",
+        },
+    });
+
+    // ======================================
+    // Load All Routine (Only Once)
+    // ======================================
+
+    const allRoutines = await prisma.classRoutine.findMany({
+        include: {
+            teacher: true,
+        },
+        orderBy: {
+            time: "asc",
+        },
+    });
+
+    // ======================================
+    // Group Routine By Day
+    // ======================================
+
+    const routineMap = {};
+
+    allRoutines.forEach((item) => {
+
+        if (!routineMap[item.day]) {
+
+            routineMap[item.day] = [];
+
+        }
+
+        routineMap[item.day].push(item);
+
+    });
+
+    // ======================================
+    // Load All Absent (Only Once)
+    // ======================================
+
+    const allAbsentTeachers =
+        await prisma.schoolTeacherAbsent.findMany({
+
+            where: {
+                date: {
+                    gte: startDate,
+                    lte: endDate,
+                },
+            },
+
+        });
+    // ======================================
+    // Group Absent Teacher By Date
+    // ======================================
+
+    const absentMap = {};
+
+    allAbsentTeachers.forEach((item) => {
+
+        const key = new Date(item.date)
+            .toISOString()
+            .slice(0, 10);
+
+        if (!absentMap[key]) {
+
+            absentMap[key] = [];
+
+        }
+
+        absentMap[key].push(item);
+
+    });
     // ======================================
     // Clone Date
     // ======================================
@@ -153,29 +251,12 @@ export async function buildAssignedTeacherReport(
 
     while (current <= last) {
 
-        const dayNames = [
 
-            "Sunday",
-
-            "Monday",
-
-            "Tuesday",
-
-            "Wednesday",
-
-            "Thursday",
-
-            "Friday",
-
-            "Saturday",
-
-        ];
 
         const day =
-            dayNames[
+            DAY_NAMES[
             current.getDay()
             ];
-
         const start =
             new Date(current);
 
@@ -185,6 +266,9 @@ export async function buildAssignedTeacherReport(
             0,
             0
         );
+        const dateKey = start
+            .toISOString()
+            .slice(0, 10);
 
         const end =
             new Date(current);
@@ -196,69 +280,26 @@ export async function buildAssignedTeacherReport(
             999
         );
 
-        // ======================================
-        // ======================================
-        // Load Normal Routine
-        // ======================================
-
-        const routines =
-            await prisma.classRoutine.findMany({
-
-                where: {
-                    day,
-                },
-
-                include: {
-                    teacher: true,
-                },
-
-                orderBy: {
-                    time: "asc",
-                },
-
-            });
+        const routines = routineMap[day] || [];
 
         // ======================================
         // Load Absent Teacher
         // ======================================
 
         const absentTeachers =
-            await prisma.schoolTeacherAbsent.findMany({
-
-                where: {
-
-                    date: {
-
-                        gte: start,
-
-                        lte: end,
-
-                    },
-
-                },
-
-            });
+            absentMap[dateKey] || [];
 
         // ======================================
         // Load All Teachers
         // ======================================
 
-        const teachers =
-            await prisma.schoolTeacher.findMany({
 
-                orderBy: {
 
-                    name: "asc",
-
-                },
-
-            });
-
-        const absentIds =
-            absentTeachers.map(
-                (item) => item.teacherId
-            );
-
+       const absentIds = new Set(
+    absentTeachers.map(
+        (item) => item.teacherId
+    )
+);
         // ======================================
         // Build Provisional Routine
         // ======================================
@@ -293,20 +334,19 @@ export async function buildAssignedTeacherReport(
 
         assignedTeachers.forEach((teacher) => {
 
-            if (
-                !teacherMap[teacher.teacherId]
-            ) {
+            let reportTeacher =
+                teacherMap[teacher.teacherId];
 
-                teacherMap[
-                    teacher.teacherId
-                ] = createTeacherObject(
+            if (!reportTeacher) {
 
-                    teacher.teacherId,
+                reportTeacher =
+                    createTeacherObject(
+                        teacher.teacherId,
+                        teacher.teacherName
+                    );
 
-                    teacher.teacherName
-
-                );
-
+                teacherMap[teacher.teacherId] =
+                    reportTeacher;
             }
 
             Object.values(
@@ -324,18 +364,13 @@ export async function buildAssignedTeacherReport(
 
                     addReportItem(
 
-                        teacherMap[
-                        teacher.teacherId
-                        ],
+                        reportTeacher,
 
-                        start
-                            .toISOString()
-                            .slice(0, 10),
+                        dateKey,
 
                         periodData
 
                     );
-
                 });
 
         });

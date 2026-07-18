@@ -93,6 +93,9 @@ export const generateAssignedTeacherReportPdf =
           prisma
 
         );
+      console.log("PDF Teachers:", teachers.length);
+
+      console.log(teachers[0]);
 
       // =============================================
       // Sort
@@ -139,7 +142,7 @@ export const generateAssignedTeacherReportPdf =
 
       doc.pipe(res);
 
-         // =============================================
+      // =============================================
       // HEADER
       // =============================================
 
@@ -252,8 +255,8 @@ export const generateAssignedTeacherReportPdf =
       doc
         .rect(
           startX +
-            slWidth +
-            teacherWidth,
+          slWidth +
+          teacherWidth,
           startY,
           totalWidth,
           rowHeight
@@ -265,9 +268,9 @@ export const generateAssignedTeacherReportPdf =
       doc
         .rect(
           startX +
-            slWidth +
-            teacherWidth +
-            totalWidth,
+          slWidth +
+          teacherWidth +
+          totalWidth,
           startY,
           detailWidth,
           rowHeight
@@ -300,8 +303,8 @@ export const generateAssignedTeacherReportPdf =
       doc.text(
         "Total",
         startX +
-          slWidth +
-          teacherWidth,
+        slWidth +
+        teacherWidth,
         startY + 13,
         {
           width: totalWidth,
@@ -312,9 +315,9 @@ export const generateAssignedTeacherReportPdf =
       doc.text(
         "Details",
         startX +
-          slWidth +
-          teacherWidth +
-          totalWidth,
+        slWidth +
+        teacherWidth +
+        totalWidth,
         startY + 13,
         {
           width: detailWidth,
@@ -341,7 +344,7 @@ export const generateAssignedTeacherReportPdf =
             .map((item) => {
 
               return (
-`${item.date}
+                `${item.date}
 ${item.period}
 ${item.className}-${item.section}
 ${item.subject}`
@@ -374,7 +377,7 @@ ${item.subject}`
 
         if (
           startY +
-            currentRowHeight >
+          currentRowHeight >
           760
         ) {
 
@@ -421,8 +424,8 @@ ${item.subject}`
           doc
             .rect(
               startX +
-                slWidth +
-                teacherWidth,
+              slWidth +
+              teacherWidth,
               startY,
               totalWidth,
               rowHeight
@@ -432,9 +435,9 @@ ${item.subject}`
           doc
             .rect(
               startX +
-                slWidth +
-                teacherWidth +
-                totalWidth,
+              slWidth +
+              teacherWidth +
+              totalWidth,
               startY,
               detailWidth,
               rowHeight
@@ -467,8 +470,8 @@ ${item.subject}`
           doc.text(
             "Total",
             startX +
-              slWidth +
-              teacherWidth,
+            slWidth +
+            teacherWidth,
             startY + 13,
             {
               width: totalWidth,
@@ -479,9 +482,9 @@ ${item.subject}`
           doc.text(
             "Details",
             startX +
-              slWidth +
-              teacherWidth +
-              totalWidth,
+            slWidth +
+            teacherWidth +
+            totalWidth,
             startY + 13,
             {
               width: detailWidth,
@@ -518,8 +521,8 @@ ${item.subject}`
         doc
           .rect(
             startX +
-              slWidth +
-              teacherWidth,
+            slWidth +
+            teacherWidth,
             startY,
             totalWidth,
             currentRowHeight
@@ -529,9 +532,9 @@ ${item.subject}`
         doc
           .rect(
             startX +
-              slWidth +
-              teacherWidth +
-              totalWidth,
+            slWidth +
+            teacherWidth +
+            totalWidth,
             startY,
             detailWidth,
             currentRowHeight
@@ -565,8 +568,8 @@ ${item.subject}`
           .text(
             teacher.teacherName,
             startX +
-              slWidth +
-              5,
+            slWidth +
+            5,
             startY + 8
           );
 
@@ -581,8 +584,8 @@ ${item.subject}`
           .text(
             teacher.totalProvisional,
             startX +
-              slWidth +
-              teacherWidth,
+            slWidth +
+            teacherWidth,
             startY + 12,
             {
               width: totalWidth,
@@ -602,10 +605,10 @@ ${item.subject}`
           .text(
             detailsText,
             startX +
-              slWidth +
-              teacherWidth +
-              totalWidth +
-              5,
+            slWidth +
+            teacherWidth +
+            totalWidth +
+            5,
             startY + 6,
             {
               width:
@@ -664,4 +667,4 @@ ${item.subject}`
 
     }
 
-};
+  };

@@ -38,7 +38,7 @@ export function buildProvisionalRoutine(
   function isTeacherAbsent(
     teacherId
   ) {
-    return absentIds.includes(
+    return absentIds.has(
       teacherId
     );
   }
