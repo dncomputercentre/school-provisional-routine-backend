@@ -17,7 +17,7 @@ import absentReportPdfRoutes from "./routes/absentReportPdfRoutes.js";
 import assignedTeacherPdfRoutes from "./routes/assignedTeacherPdfRoutes.js";
 import assignedTeacherRoutes from "./routes/assignedTeacherRoutes.js";
 import assignedTeacherReportRoutes from "./routes/assignedTeacherReportRoutes.js";
-//import assignedTeacherReportPdfRoutes from "./routes/assignedTeacherReportPdfRoutes.js";
+import assignedTeacherReportPdfRoutes from "./routes/assignedTeacherReportPdfRoutes.js";
 dotenv.config();
 
 const app = express();
@@ -41,7 +41,7 @@ app.use("/api/absent-report-pdf",absentReportPdfRoutes);
 app.use("/api/assigned-teacher",assignedTeacherRoutes);
 app.use("/api/assigned-teacher-report",assignedTeacherReportRoutes);
 
-//app.use("/api/assigned-teacher-report-pdf",assignedTeacherReportPdfRoutes);
+app.use("/api/assigned-teacher-report-pdf",assignedTeacherReportPdfRoutes);
 
 // TEST ROUTE
 app.get("/", (req, res) => {
