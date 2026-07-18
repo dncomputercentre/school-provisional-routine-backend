@@ -339,19 +339,17 @@ export const generateAssignedTeacherReportPdf =
         // Build Details Text
         // ==========================================
 
-        const detailsText =
-          teacher.details
-            .map((item) => {
+        const dateCount = {};
 
-              return (
-                `${item.date}
-${item.period}
-${item.className}-${item.section}
-${item.subject}`
-              );
+        teacher.details.forEach((item) => {
+          const d = item.date;
 
-            })
-            .join("\n\n");
+          dateCount[d] = (dateCount[d] || 0) + 1;
+        });
+
+        const detailsText = Object.entries(dateCount)
+          .map(([date, total]) => `${date} (${total})`)
+          .join(", ");
 
         // ==========================================
         // Auto Row Height
