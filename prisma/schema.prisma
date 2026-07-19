@@ -25,7 +25,13 @@ model SchoolTeacher {
   mobile           String
   mainSubject      String
   optionalSubjects String[]
-  createdAt        DateTime @default(now())
+
+  provisionalEnabled Boolean @default(true)
+  maxClass           Int @default(12)
+  maxProvisional     Int @default(2)
+  priority           Int @default(0)
+
+  createdAt DateTime @default(now())
 
   routines ClassRoutine[]
   absents  SchoolTeacherAbsent[]
