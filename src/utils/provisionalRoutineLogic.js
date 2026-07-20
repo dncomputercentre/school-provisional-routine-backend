@@ -11,6 +11,8 @@ export function buildProvisionalRoutine(
   // ===========================
   // Teacher Load
   // ===========================
+  absentIds = new Set(absentIds);
+
 
   const teacherLoad = {};
 
