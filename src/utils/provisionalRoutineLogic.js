@@ -1,6 +1,5 @@
 // backend/src/utils/provisionalRoutineLogic.js
 
-const MAX_PROVISIONAL_PER_DAY = 2;
 
 export function buildProvisionalRoutine(
   routines,
@@ -36,7 +35,22 @@ export function buildProvisionalRoutine(
       className.includes("XII")
     );
   }
+  function getClassNumber(className) {
 
+    const map = {
+      "Class-V": 5,
+      "Class-VI": 6,
+      "Class-VII": 7,
+      "Class-VIII": 8,
+      "Class-IX": 9,
+      "Class-X": 10,
+      "Class-XI": 11,
+      "Class-XII": 12,
+    };
+
+    return map[className] || 12;
+
+  }
   function isTeacherAbsent(
     teacherId
   ) {
@@ -58,13 +72,17 @@ export function buildProvisionalRoutine(
     );
   }
 
-  function isTeacherOverloaded(
-    teacherId
-  ) {
+  function isTeacherOverloaded(teacherId) {
+
+    const teacher = teachers.find(
+      (t) => t.id === teacherId
+    );
+
     return (
       teacherLoad[teacherId] >=
-      MAX_PROVISIONAL_PER_DAY
+      (teacher?.maxProvisional ?? 2)
     );
+
   }
 
   function alreadyAssigned(
@@ -105,7 +123,7 @@ export function buildProvisionalRoutine(
 
   const result = [];
 
-    // ===========================
+  // ===========================
   // Build Provisional Routine
   // ===========================
 
@@ -146,6 +164,14 @@ export function buildProvisionalRoutine(
     // ===========================
 
     let freeTeachers = teachers.filter((t) => {
+      if (!t.provisionalEnabled)
+        return false;
+
+      if (
+        getClassNumber(routine.className) >
+        (t.maxClass ?? 12)
+      )
+        return false;
 
       if (t.id === routine.teacherId)
         return false;
@@ -190,6 +216,16 @@ export function buildProvisionalRoutine(
       freeTeachers.sort((a, b) => {
 
         if (
+          (a.priority || 0) !==
+          (b.priority || 0)
+        ) {
+          return (
+            (b.priority || 0) -
+            (a.priority || 0)
+          );
+        }
+
+        if (
           teacherLoad[a.id] !==
           teacherLoad[b.id]
         ) {
@@ -199,9 +235,7 @@ export function buildProvisionalRoutine(
           );
         }
 
-        return a.name.localeCompare(
-          b.name
-        );
+        return a.name.localeCompare(b.name);
 
       });
 
@@ -209,13 +243,22 @@ export function buildProvisionalRoutine(
       reason = "Main Subject";
     }
 
-        // ===========================
+    // ===========================
     // Priority 2 : Optional Subject
     // ===========================
 
     if (!candidate) {
 
       freeTeachers = teachers.filter((t) => {
+
+        if (!t.provisionalEnabled)
+          return false;
+
+        if (
+          getClassNumber(routine.className) >
+          (t.maxClass ?? 12)
+        )
+          return false;
 
         if (t.id === routine.teacherId)
           return false;
@@ -259,6 +302,16 @@ export function buildProvisionalRoutine(
         freeTeachers.sort((a, b) => {
 
           if (
+            (a.priority || 0) !==
+            (b.priority || 0)
+          ) {
+            return (
+              (b.priority || 0) -
+              (a.priority || 0)
+            );
+          }
+
+          if (
             teacherLoad[a.id] !==
             teacherLoad[b.id]
           ) {
@@ -268,9 +321,7 @@ export function buildProvisionalRoutine(
             );
           }
 
-          return a.name.localeCompare(
-            b.name
-          );
+          return a.name.localeCompare(b.name);
 
         });
 
@@ -288,6 +339,15 @@ export function buildProvisionalRoutine(
     if (!candidate) {
 
       freeTeachers = teachers.filter((t) => {
+
+        if (!t.provisionalEnabled)
+          return false;
+
+        if (
+          getClassNumber(routine.className) >
+          (t.maxClass ?? 12)
+        )
+          return false;
 
         if (t.id === routine.teacherId)
           return false;
@@ -327,6 +387,16 @@ export function buildProvisionalRoutine(
         freeTeachers.sort((a, b) => {
 
           if (
+            (a.priority || 0) !==
+            (b.priority || 0)
+          ) {
+            return (
+              (b.priority || 0) -
+              (a.priority || 0)
+            );
+          }
+
+          if (
             teacherLoad[a.id] !==
             teacherLoad[b.id]
           ) {
@@ -336,9 +406,7 @@ export function buildProvisionalRoutine(
             );
           }
 
-          return a.name.localeCompare(
-            b.name
-          );
+          return a.name.localeCompare(b.name);
 
         });
 
@@ -349,7 +417,7 @@ export function buildProvisionalRoutine(
 
     }
 
-        // ===========================
+    // ===========================
     // Save Substitute Teacher
     // ===========================
 
@@ -394,6 +462,6 @@ export function buildProvisionalRoutine(
     return a.time.localeCompare(b.time);
 
   });
-return result;
+  return result;
 
 }
