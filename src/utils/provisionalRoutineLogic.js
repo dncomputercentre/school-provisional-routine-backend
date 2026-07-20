@@ -1,40 +1,92 @@
 // backend/src/utils/provisionalRoutineLogic.js
 
-
 export function buildProvisionalRoutine(
   routines,
   teachers,
   absentIds
 ) {
 
-  // ===========================
-  // Teacher Load
-  // ===========================
+  // ==========================================
+  // Absent Teacher Set
+  // ==========================================
+
   absentIds = new Set(absentIds);
 
+  // ==========================================
+  // Period Order
+  // ==========================================
+
+  const PERIOD_ORDER = [
+    "First",
+    "Second",
+    "Third",
+    "Fourth",
+    "Fifth",
+    "Sixth",
+    "Seventh",
+    "Eight",
+  ];
+
+  const DAY_ORDER = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
+  // ==========================================
+  // Teacher Load
+  // ==========================================
 
   const teacherLoad = {};
 
-  teachers.forEach((t) => {
-    teacherLoad[t.id] = 0;
+  teachers.forEach((teacher) => {
+    teacherLoad[teacher.id] = 0;
   });
 
-  // ===========================
-  // Assigned Map
-  // ===========================
+  // ==========================================
+  // Provisional Assignment Map
+  // ==========================================
 
   const provisionalTimeMap = {};
 
-  // ===========================
+  // ==========================================
+  // Teacher Normal + Provisional Period Store
+  // ==========================================
+
+  const teacherPeriods = {};
+
+  routines.forEach((routine) => {
+
+    if (!teacherPeriods[routine.teacherId]) {
+      teacherPeriods[routine.teacherId] = {};
+    }
+
+    if (!teacherPeriods[routine.teacherId][routine.day]) {
+      teacherPeriods[routine.teacherId][routine.day] = [];
+    }
+
+    teacherPeriods[routine.teacherId][routine.day].push(
+      routine.period
+    );
+
+  });
+
+  // ==========================================
   // Helper Functions
-  // ===========================
+  // ==========================================
 
   function isSeniorClass(className) {
+
     return (
       className.includes("XI") ||
       className.includes("XII")
     );
+
   }
+
   function getClassNumber(className) {
 
     const map = {
@@ -48,15 +100,14 @@ export function buildProvisionalRoutine(
       "Class-XII": 12,
     };
 
-    return map[className] || 12;
+    return map[className] ?? 12;
 
   }
-  function isTeacherAbsent(
-    teacherId
-  ) {
-    return absentIds.has(
-      teacherId
-    );
+
+  function isTeacherAbsent(teacherId) {
+
+    return absentIds.has(teacherId);
+
   }
 
   function isTeacherBusy(
@@ -64,15 +115,19 @@ export function buildProvisionalRoutine(
     time,
     day
   ) {
+
     return routines.some(
-      (r) =>
-        r.teacherId === teacherId &&
-        r.day === day &&
-        r.time === time
+      (routine) =>
+        routine.teacherId === teacherId &&
+        routine.day === day &&
+        routine.time === time
     );
+
   }
 
-  function isTeacherOverloaded(teacherId) {
+  function isTeacherOverloaded(
+    teacherId
+  ) {
 
     const teacher = teachers.find(
       (t) => t.id === teacherId
@@ -90,138 +145,172 @@ export function buildProvisionalRoutine(
     day,
     time
   ) {
-    const key =
-      teacherId +
-      "_" +
-      day +
-      "_" +
-      time;
 
-    return provisionalTimeMap[key];
+    const key =
+      `${teacherId}_${day}_${time}`;
+
+    return provisionalTimeMap[key] === true;
+
   }
 
   function assignTeacher(
     teacherId,
     day,
-    time
+    time,
+    period
   ) {
+
     const key =
-      teacherId +
-      "_" +
-      day +
-      "_" +
-      time;
+      `${teacherId}_${day}_${time}`;
 
     provisionalTimeMap[key] = true;
 
     teacherLoad[teacherId]++;
+
+    if (!teacherPeriods[teacherId]) {
+      teacherPeriods[teacherId] = {};
+    }
+
+    if (!teacherPeriods[teacherId][day]) {
+      teacherPeriods[teacherId][day] = [];
+    }
+
+    teacherPeriods[teacherId][day].push(
+      period
+    );
+
   }
 
-  // ===========================
+  function hasThreeConsecutiveClasses(
+    teacherId,
+    day,
+    newPeriod
+  ) {
+
+    const periods = [
+
+      ...(teacherPeriods[teacherId]?.[day] || []),
+
+      newPeriod,
+
+    ];
+
+    const indexes = periods
+
+      .map((period) =>
+        PERIOD_ORDER.indexOf(period)
+      )
+
+      .filter((index) => index >= 0)
+
+      .sort((a, b) => a - b);
+
+    let consecutive = 1;
+
+    for (let i = 1; i < indexes.length; i++) {
+
+      if (
+        indexes[i] ===
+        indexes[i - 1] + 1
+      ) {
+
+        consecutive++;
+
+        if (consecutive > 3) {
+          return true;
+        }
+
+      } else {
+
+        consecutive = 1;
+
+      }
+
+    }
+
+    return false;
+
+  }
+
+  // ==========================================
   // Result
-  // ===========================
+  // ==========================================
 
   const result = [];
 
-  // ===========================
-  // Build Provisional Routine
-  // ===========================
 
-  for (const routine of routines) {
+  // ==========================================
+  // Common Teacher Filter
+  // ==========================================
 
-    // Teacher উপস্থিত থাকলে
-    if (!isTeacherAbsent(routine.teacherId)) {
+  function getEligibleTeachers(
+    routine,
+    matcher
+  ) {
 
-      result.push({
-        ...routine,
-        isAbsent: false,
-        substituteTeacher: null,
-        reason: null,
-      });
+    return teachers
+      .filter((t) => {
 
-      continue;
-    }
-
-    // XI / XII হলে Substitute হবে না
-
-    if (isSeniorClass(routine.className)) {
-
-      result.push({
-        ...routine,
-        isAbsent: true,
-        substituteTeacher: null,
-        reason: "Senior Class",
-      });
-
-      continue;
-    }
-
-    let candidate = null;
-    let reason = "";
-
-    // ===========================
-    // Priority 1 : Main Subject
-    // ===========================
-
-    let freeTeachers = teachers.filter((t) => {
-      if (!t.provisionalEnabled)
-        return false;
-
-      if (
-        getClassNumber(routine.className) >
-        (t.maxClass ?? 12)
-      )
-        return false;
-
-      if (t.id === routine.teacherId)
-        return false;
-
-      if (isTeacherAbsent(t.id))
-        return false;
-
-      if (
-        isTeacherBusy(
-          t.id,
-          routine.time,
-          routine.day
-        )
-      )
-        return false;
-
-      if (
-        alreadyAssigned(
-          t.id,
-          routine.day,
-          routine.time
-        )
-      )
-        return false;
-
-      if (
-        isTeacherOverloaded(t.id)
-      )
-        return false;
-
-      return (
-        (t.mainSubject || "")
-          .toLowerCase() ===
-        (routine.subject || "")
-          .toLowerCase()
-      );
-
-    });
-
-    if (freeTeachers.length > 0) {
-
-      freeTeachers.sort((a, b) => {
+        if (!t.provisionalEnabled)
+          return false;
 
         if (
-          (a.priority || 0) !==
-          (b.priority || 0)
+          getClassNumber(routine.className) >
+          (t.maxClass ?? 12)
+        )
+          return false;
+
+        if (t.id === routine.teacherId)
+          return false;
+
+        if (isTeacherAbsent(t.id))
+          return false;
+
+        if (
+          isTeacherBusy(
+            t.id,
+            routine.time,
+            routine.day
+          )
+        )
+          return false;
+
+        if (
+          alreadyAssigned(
+            t.id,
+            routine.day,
+            routine.time
+          )
+        )
+          return false;
+
+        if (
+          isTeacherOverloaded(t.id)
+        )
+          return false;
+
+        // Normal + Provisional
+        if (
+          hasThreeConsecutiveClasses(
+            t.id,
+            routine.day,
+            routine.period
+          )
+        )
+          return false;
+
+        return matcher(t);
+
+      })
+      .sort((a, b) => {
+
+        if (
+          (a.priority ?? 0) !==
+          (b.priority ?? 0)
         ) {
           return (
-            (b.priority || 0) -
-            (a.priority || 0)
+            (b.priority ?? 0) -
+            (a.priority ?? 0)
           );
         }
 
@@ -239,194 +328,142 @@ export function buildProvisionalRoutine(
 
       });
 
-      candidate = freeTeachers[0];
-      reason = "Main Subject";
+  }
+  // ==========================================
+  // Build Provisional Routine
+  // ==========================================
+
+  for (const routine of routines) {
+
+    // Teacher Present
+    if (!isTeacherAbsent(routine.teacherId)) {
+
+      result.push({
+        ...routine,
+        isAbsent: false,
+        substituteTeacher: null,
+        reason: null,
+      });
+
+      continue;
+
     }
 
-    // ===========================
-    // Priority 2 : Optional Subject
-    // ===========================
+    // XI / XII Skip
 
+    if (isSeniorClass(routine.className)) {
+
+      result.push({
+        ...routine,
+        isAbsent: true,
+        substituteTeacher: null,
+        reason: "Senior Class",
+      });
+
+      continue;
+
+    }
+
+    let candidate = null;
+    let reason = "";
+
+    // ==========================================
+    // Priority-1 : Main Subject
+    // ==========================================
+
+    let freeTeachers = getEligibleTeachers(
+
+      routine,
+
+      (t) =>
+
+        (t.mainSubject || "")
+          .toLowerCase() ===
+        (routine.subject || "")
+          .toLowerCase()
+
+    );
+
+    if (freeTeachers.length > 0) {
+
+      candidate = freeTeachers[0];
+
+      reason = "Main Subject";
+
+    }
+
+    // ==========================================
+    // Priority-2 : Optional Subject
+    // ==========================================
     if (!candidate) {
 
-      freeTeachers = teachers.filter((t) => {
+      freeTeachers = getEligibleTeachers(
 
-        if (!t.provisionalEnabled)
-          return false;
+        routine,
 
-        if (
-          getClassNumber(routine.className) >
-          (t.maxClass ?? 12)
-        )
-          return false;
+        (t) =>
 
-        if (t.id === routine.teacherId)
-          return false;
+          (t.optionalSubjects || []).some(
 
-        if (isTeacherAbsent(t.id))
-          return false;
+            (s) =>
 
-        if (
-          isTeacherBusy(
-            t.id,
-            routine.time,
-            routine.day
+              (s || "").toLowerCase() ===
+              (routine.subject || "").toLowerCase()
+
           )
-        )
-          return false;
 
-        if (
-          alreadyAssigned(
-            t.id,
-            routine.day,
-            routine.time
-          )
-        )
-          return false;
-
-        if (
-          isTeacherOverloaded(t.id)
-        )
-          return false;
-
-        return (t.optionalSubjects || []).some(
-          (s) =>
-            (s || "").toLowerCase() ===
-            (routine.subject || "").toLowerCase()
-        );
-
-      });
+      );
 
       if (freeTeachers.length > 0) {
 
-        freeTeachers.sort((a, b) => {
-
-          if (
-            (a.priority || 0) !==
-            (b.priority || 0)
-          ) {
-            return (
-              (b.priority || 0) -
-              (a.priority || 0)
-            );
-          }
-
-          if (
-            teacherLoad[a.id] !==
-            teacherLoad[b.id]
-          ) {
-            return (
-              teacherLoad[a.id] -
-              teacherLoad[b.id]
-            );
-          }
-
-          return a.name.localeCompare(b.name);
-
-        });
-
         candidate = freeTeachers[0];
+
         reason = "Optional Subject";
 
       }
 
     }
 
-    // ===========================
-    // Priority 3 : Any Free Teacher
-    // ===========================
+    // ==========================================
+    // Priority-3 : Any Free Teacher
+    // ==========================================
 
     if (!candidate) {
 
-      freeTeachers = teachers.filter((t) => {
+      freeTeachers = getEligibleTeachers(
 
-        if (!t.provisionalEnabled)
-          return false;
+        routine,
 
-        if (
-          getClassNumber(routine.className) >
-          (t.maxClass ?? 12)
-        )
-          return false;
+        () => true
 
-        if (t.id === routine.teacherId)
-          return false;
-
-        if (isTeacherAbsent(t.id))
-          return false;
-
-        if (
-          isTeacherBusy(
-            t.id,
-            routine.time,
-            routine.day
-          )
-        )
-          return false;
-
-        if (
-          alreadyAssigned(
-            t.id,
-            routine.day,
-            routine.time
-          )
-        )
-          return false;
-
-        if (
-          isTeacherOverloaded(t.id)
-        )
-          return false;
-
-        return true;
-
-      });
+      );
 
       if (freeTeachers.length > 0) {
 
-        freeTeachers.sort((a, b) => {
-
-          if (
-            (a.priority || 0) !==
-            (b.priority || 0)
-          ) {
-            return (
-              (b.priority || 0) -
-              (a.priority || 0)
-            );
-          }
-
-          if (
-            teacherLoad[a.id] !==
-            teacherLoad[b.id]
-          ) {
-            return (
-              teacherLoad[a.id] -
-              teacherLoad[b.id]
-            );
-          }
-
-          return a.name.localeCompare(b.name);
-
-        });
-
         candidate = freeTeachers[0];
+
         reason = "Free Teacher";
 
       }
 
     }
 
-    // ===========================
+    // ==========================================
     // Save Substitute Teacher
-    // ===========================
+    // ==========================================
 
     if (candidate) {
 
       assignTeacher(
+
         candidate.id,
+
         routine.day,
-        routine.time
+
+        routine.time,
+
+        routine.period
+
       );
 
     }
@@ -449,19 +486,27 @@ export function buildProvisionalRoutine(
 
   }
 
-  // ===========================
+  // ==========================================
   // Sort Result
-  // ===========================
+  // ==========================================
 
   result.sort((a, b) => {
 
-    if (a.day !== b.day) {
-      return a.day.localeCompare(b.day);
+    const dayDiff =
+      DAY_ORDER.indexOf(a.day) -
+      DAY_ORDER.indexOf(b.day);
+
+    if (dayDiff !== 0) {
+      return dayDiff;
     }
 
-    return a.time.localeCompare(b.time);
+    return (
+      PERIOD_ORDER.indexOf(a.period) -
+      PERIOD_ORDER.indexOf(b.period)
+    );
 
   });
+
   return result;
 
 }
