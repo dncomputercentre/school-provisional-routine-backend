@@ -129,12 +129,49 @@ export function buildProvisionalRoutine(
     teacherId
   ) {
 
+    // ===============================
+    // Normal Class Count
+    // ===============================
+
+    const normalClassCount =
+      routines.filter(
+        (routine) =>
+          routine.teacherId === teacherId
+      ).length;
+
+    // ===============================
+    // Provisional Class Count
+    // ===============================
+
+    const provisionalClassCount =
+      teacherLoad[teacherId] || 0;
+
+    // ===============================
+    // Total Class
+    // ===============================
+
+    const totalClass =
+      normalClassCount +
+      provisionalClassCount;
+
+    // ===============================
+    // Maximum Total Class = 5
+    // ===============================
+
+    if (totalClass >= 5) {
+      return true;
+    }
+
+    // ===============================
+    // Existing Provisional Limit
+    // ===============================
+
     const teacher = teachers.find(
       (t) => t.id === teacherId
     );
 
     return (
-      teacherLoad[teacherId] >=
+      provisionalClassCount >=
       (teacher?.maxProvisional ?? 2)
     );
 
